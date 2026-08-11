@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response, Router } from 'express';
 import { unlink } from 'fs';
 import multer from 'multer';
+import { requireAuth } from '../../auth/auth-middleware';
 import { appConfig } from '../../config';
 import { getBookById } from '../get-book-by-id-middleware';
 import { CoversService } from './covers-service';
@@ -47,6 +48,7 @@ const upload = multer({
  */
 router.post(
   '/',
+  requireAuth,
   getBookById,
   async (req: Request, _res: Response, next: NextFunction) => {
     console.debug('Deleting existing cover for book', req.book!.md5);

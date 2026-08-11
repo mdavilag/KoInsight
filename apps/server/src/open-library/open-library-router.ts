@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response, Router } from 'express';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { requireAuth } from '../auth/auth-middleware';
 import { BooksRepository } from '../books/books-repository';
 import { CoversService } from '../books/covers/covers-service';
 import { appConfig } from '../config';
@@ -24,7 +25,7 @@ router.get('/list-covers', async (req: Request, res: Response, next: NextFunctio
 /**
  * Fetches a book cover from Open Library API and saves it to the server
  */
-router.get('/cover', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/cover', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   const { coverId, bookId, size = 'M' } = req.query;
 
   if (!bookId || !coverId) {

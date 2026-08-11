@@ -3,6 +3,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router';
 import { App } from './app';
+import { AuthProvider } from './auth/auth-context';
 
 import '@mantine/charts/styles.css';
 import '@mantine/core/styles.css';
@@ -20,7 +21,9 @@ ReactDOM.createRoot(root!).render(
   <React.StrictMode>
     <NuqsAdapter>
       <BrowserRouter>
-        <App />
+        <AuthProvider>
+          <App />
+        </AuthProvider>
       </BrowserRouter>
     </NuqsAdapter>
   </React.StrictMode>

@@ -1,5 +1,7 @@
 import express from 'express';
 import request from 'supertest';
+import { expectedToken } from '../auth/auth-token';
+import { appConfig } from '../config';
 import { createBook } from '../db/factories/book-factory';
 import { db } from '../knex';
 import { booksRouter } from './books-router';
@@ -8,6 +10,8 @@ describe('books-router', () => {
   const app = express();
   app.use(express.json());
   app.use('/books', booksRouter);
+
+  const authCookie = `${appConfig.auth.cookieName}=${expectedToken()}`;
 
   describe('GET /books', () => {
     it('returns all books as JSON', async () => {
@@ -56,11 +60,30 @@ describe('books-router', () => {
     });
   });
 
+  describe('mutation routes require authentication', () => {
+    it('returns 401 without a session cookie', async () => {
+      const book = await createBook(db);
+
+      await request(app).delete(`/books/${book.id}`).expect(401);
+      await request(app).put(`/books/${book.id}/hide`).send({ hidden: true }).expect(401);
+      await request(app).post(`/books/${book.id}/genres`).send({ genreName: 'Sci-Fi' }).expect(401);
+      await request(app)
+        .put(`/books/${book.id}/reference_pages`)
+        .send({ reference_pages: 100 })
+        .expect(401);
+    });
+
+    it('still allows anonymous reads', async () => {
+      await createBook(db, { title: 'Public Book' });
+      await request(app).get('/books').expect(200);
+    });
+  });
+
   describe('DELETE /books/:bookId', () => {
     it('deletes a book', async () => {
       const book = await createBook(db, { title: 'Book to Delete' });
 
-      const response = await request(app).delete(`/books/${book.id}`);
+      const response = await request(app).delete(`/books/${book.id}`).set('Cookie', authCookie);
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ message: 'Book deleted' });
     });
@@ -70,7 +93,10 @@ describe('books-router', () => {
     it('hides a book', async () => {
       const book = await createBook(db, { title: 'Book to Hide', soft_deleted: false });
 
-      const response = await request(app).put(`/books/${book.id}/hide`).send({ hidden: true });
+      const response = await request(app)
+        .put(`/books/${book.id}/hide`)
+        .set('Cookie', authCookie)
+        .send({ hidden: true });
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ message: 'Book hidden' });
     });
@@ -78,7 +104,10 @@ describe('books-router', () => {
     it('shows a hidden book', async () => {
       const book = await createBook(db, { title: 'Hidden Book', soft_deleted: true });
 
-      const response = await request(app).put(`/books/${book.id}/hide`).send({ hidden: false });
+      const response = await request(app)
+        .put(`/books/${book.id}/hide`)
+        .set('Cookie', authCookie)
+        .send({ hidden: false });
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ message: 'Book shown' });
     });
@@ -86,7 +115,10 @@ describe('books-router', () => {
     it('returns 400 when hidden field is missing', async () => {
       const book = await createBook(db);
 
-      const response = await request(app).put(`/books/${book.id}/hide`).send({});
+      const response = await request(app)
+        .put(`/books/${book.id}/hide`)
+        .set('Cookie', authCookie)
+        .send({});
       expect(response.status).toBe(400);
       expect(response.body).toEqual({ error: 'Missing required fields' });
     });
@@ -98,6 +130,7 @@ describe('books-router', () => {
 
       const response = await request(app)
         .post(`/books/${book.id}/genres`)
+        .set('Cookie', authCookie)
         .send({ genreName: 'Fantasy' });
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ message: 'Genre added' });
@@ -106,7 +139,10 @@ describe('books-router', () => {
     it('returns 400 when genreName is missing', async () => {
       const book = await createBook(db);
 
-      const response = await request(app).post(`/books/${book.id}/genres`).send({});
+      const response = await request(app)
+        .post(`/books/${book.id}/genres`)
+        .set('Cookie', authCookie)
+        .send({});
       expect(response.status).toBe(400);
       expect(response.body).toEqual({ error: 'Missing required fields' });
     });
@@ -118,6 +154,7 @@ describe('books-router', () => {
 
       const response = await request(app)
         .put(`/books/${book.id}/reference_pages`)
+        .set('Cookie', authCookie)
         .send({ reference_pages: 250 });
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ message: 'Reference pages updated' });
@@ -126,7 +163,10 @@ describe('books-router', () => {
     it('returns 400 when reference_pages is missing', async () => {
       const book = await createBook(db);
 
-      const response = await request(app).put(`/books/${book.id}/reference_pages`).send({});
+      const response = await request(app)
+        .put(`/books/${book.id}/reference_pages`)
+        .set('Cookie', authCookie)
+        .send({});
       expect(response.status).toBe(400);
       expect(response.body).toEqual({ error: 'Missing required fields' });
     });

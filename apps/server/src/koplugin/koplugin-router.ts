@@ -5,6 +5,7 @@ import { PageStat } from '@koinsight/common/types/page-stat';
 import archiver from 'archiver';
 import { NextFunction, Request, Response, Router } from 'express';
 import path from 'path';
+import { requireAuth } from '../auth/auth-middleware';
 import { DeviceRepository } from '../devices/device-repository';
 import { UploadService } from '../upload/upload-service';
 
@@ -77,7 +78,7 @@ router.get('/health', rejectOldPluginVersion, async (_, res) => {
   res.status(200).json({ message: 'Plugin is healthy' });
 });
 
-router.get('/download', (_, res) => {
+router.get('/download', requireAuth, (_, res) => {
   const folderPath = path.join(__dirname, '../../../../', 'plugins');
   const archive = archiver('zip', { zlib: { level: 9 } });
 

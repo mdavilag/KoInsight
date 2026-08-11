@@ -1,5 +1,6 @@
 import { Progress } from '@koinsight/common/types/progress';
 import { Request, Response, Router } from 'express';
+import { requireAuth } from '../auth/auth-middleware';
 import { authenticate } from './kosync-authenticate-middleware';
 import { KosyncRepository } from './kosync-repository';
 import { UserExistsError, UserRepository } from './user-repository';
@@ -151,7 +152,8 @@ router.get(
   }
 );
 
-router.get('/syncs/progress', async (req: Request, res: Response) => {
+
+router.get('/syncs/progress', requireAuth, async (req: Request, res: Response) => {
   const progresses = await KosyncRepository.getAll();
   res.status(200).json(progresses);
 });

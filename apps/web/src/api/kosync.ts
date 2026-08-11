@@ -6,7 +6,7 @@ export function useProgresses() {
   return useSWR(
     'progresses',
     () =>
-      fetch(`${SERVER_URL}/syncs/progress`).then(
+      fetch(`${SERVER_URL}/syncs/progress`, { credentials: 'include' }).then(
         (res) => res.json() as Promise<ProgressWithUsername[]>
       ),
     { fallbackData: [] }

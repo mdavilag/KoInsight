@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response, Router } from 'express';
+import { requireAuth } from '../auth/auth-middleware';
 import { BooksRepository } from './books-repository';
 import { BooksService } from './books-service';
 import { coversRouter } from './covers/covers-router';
@@ -30,7 +31,7 @@ router.get('/:bookId', getBookById, async (req: Request, res: Response, next: Ne
 /**
  * Delete a book by ID
  */
-router.delete('/:bookId', getBookById, async (req: Request, res: Response) => {
+router.delete('/:bookId', requireAuth, getBookById, async (req: Request, res: Response) => {
   const book = req.book!;
 
   try {
@@ -42,7 +43,7 @@ router.delete('/:bookId', getBookById, async (req: Request, res: Response) => {
   }
 });
 
-router.put('/:bookId/hide', getBookById, async (req: Request, res: Response) => {
+router.put('/:bookId/hide', requireAuth, getBookById, async (req: Request, res: Response) => {
   const book = req.book!;
   const hidden = req.body.hidden;
 
@@ -63,7 +64,7 @@ router.put('/:bookId/hide', getBookById, async (req: Request, res: Response) => 
 /**
  * Adds a new genre to a book
  */
-router.post('/:bookId/genres', getBookById, async (req: Request, res: Response) => {
+router.post('/:bookId/genres', requireAuth, getBookById, async (req: Request, res: Response) => {
   const book = req.book!;
   const { genreName } = req.body;
 
@@ -84,22 +85,27 @@ router.post('/:bookId/genres', getBookById, async (req: Request, res: Response) 
 /**
  * Updates a book's reference pages
  */
-router.put('/:bookId/reference_pages', getBookById, async (req: Request, res: Response) => {
-  const book = req.book!;
-  const { reference_pages } = req.body;
+router.put(
+  '/:bookId/reference_pages',
+  requireAuth,
+  getBookById,
+  async (req: Request, res: Response) => {
+    const book = req.book!;
+    const { reference_pages } = req.body;
 
-  if (reference_pages === undefined || reference_pages === null) {
-    res.status(400).json({ error: 'Missing required fields' });
-    return;
-  }
+    if (reference_pages === undefined || reference_pages === null) {
+      res.status(400).json({ error: 'Missing required fields' });
+      return;
+    }
 
-  try {
-    await BooksRepository.setReferencePages(book.id, reference_pages);
-    res.status(200).json({ message: 'Reference pages updated' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to update reference pages' });
+    try {
+      await BooksRepository.setReferencePages(book.id, reference_pages);
+      res.status(200).json({ message: 'Reference pages updated' });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Failed to update reference pages' });
+    }
   }
-});
+);
 
 export { router as booksRouter };

@@ -27,6 +27,7 @@ import {
 import { sum } from 'ramda';
 import { JSX, useState } from 'react';
 import { useParams } from 'react-router';
+import { useAuth } from '../../auth/auth-context';
 import { useBookWithData } from '../../api/use-book-with-data';
 import { getLatestReadPage } from '../../utils/book-progress';
 import { formatSecondsToHumanReadable } from '../../utils/dates';
@@ -38,6 +39,7 @@ import { BookPageRaw } from './book-page-raw';
 
 export function BookPage(): JSX.Element {
   const { id } = useParams() as { id: string };
+  const { authenticated } = useAuth();
   const { data: book, isLoading, mutate } = useBookWithData(Number(id));
 
   const [tabValue, setTabValue] = useState<string | null>('calendar');
@@ -81,9 +83,11 @@ export function BookPage(): JSX.Element {
                 )}
               </Flex>
             </Tabs.Tab>
-            <Tabs.Tab value="manage" leftSection={<IconSettings size={16} />}>
-              Manage data
-            </Tabs.Tab>
+            {authenticated && (
+              <Tabs.Tab value="manage" leftSection={<IconSettings size={16} />}>
+                Manage data
+              </Tabs.Tab>
+            )}
             {tabValue === 'raw-values' && (
               <Tabs.Tab value="raw-values" leftSection={<IconTable size={16} />}>
                 Raw Values
@@ -142,11 +146,13 @@ export function BookPage(): JSX.Element {
           </Box>
         </Tabs.Panel>
 
-        <Tabs.Panel value="manage">
-          <Box py={20}>
-            <BookPageManage book={book} />
-          </Box>
-        </Tabs.Panel>
+        {authenticated && (
+          <Tabs.Panel value="manage">
+            <Box py={20}>
+              <BookPageManage book={book} />
+            </Box>
+          </Tabs.Panel>
+        )}
       </Tabs>
     </Stack>
   );

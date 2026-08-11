@@ -33,6 +33,7 @@ export async function updateBookReferencePages(id: Book['id'], referencePages: n
 export function uploadBookCover(bookId: Book['id'], formData: FormData) {
   return fetch(`${API_URL}/books/${bookId}/cover`, {
     method: 'POST',
+    credentials: 'include',
     body: formData,
     headers: { Accept: 'multipart/form-data' },
   });

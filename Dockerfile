@@ -25,6 +25,10 @@ RUN mkdir -p /app/data
 COPY --from=builder /app/node_modules /app/node_modules
 COPY --from=builder /app/apps/server/dist /app/apps/server/dist
 COPY --from=builder /app/apps/web/dist /app/apps/web/dist
+# The @koinsight/common workspace is symlinked from node_modules; ship its built
+# output so runtime requires (e.g. @koinsight/common/utils/ranges) resolve.
+COPY --from=builder /app/packages/common/package.json /app/packages/common/package.json
+COPY --from=builder /app/packages/common/dist /app/packages/common/dist
 COPY plugins ./plugins
 
 ENV NODE_ENV="production"

@@ -4,6 +4,8 @@ import { Server } from 'http';
 import morgan from 'morgan';
 import path from 'path';
 import { openAiRouter } from './ai/open-ai-router';
+import { requireAuth } from './auth/auth-middleware';
+import { authRouter } from './auth/auth-router';
 import { booksRouter } from './books/books-router';
 import { appConfig } from './config';
 import { devicesRouter } from './devices/devices-router';
@@ -26,14 +28,24 @@ async function setupServer() {
   app.use(cors({ origin: '*' }));
   // }
 
+  // Device-facing endpoints — NO dashboard auth (the KOReader plugin / KoSync
+  // device can't send the dashboard credentials).
   app.use('/', kosyncRouter); // Needs to be mounted at root to follow KoSync API
   app.use('/api/plugin', kopluginRouter);
+
+  // Dashboard authentication (login / logout / session check).
+  app.use('/api/auth', authRouter);
+
+  // Read-only endpoints — public (anonymous view). Individual mutation routes
+  // inside these routers are guarded per-route with requireAuth.
   app.use('/api/devices', devicesRouter);
   app.use('/api/books', booksRouter);
   app.use('/api/stats', statsRouter);
-  app.use('/api/upload', uploadRouter);
   app.use('/api/open-library', openLibraryRouter);
-  app.use('/api/ai', openAiRouter);
+
+  // Whole-router login-only endpoints (single sensitive route each).
+  app.use('/api/upload', requireAuth, uploadRouter);
+  app.use('/api/ai', requireAuth, openAiRouter);
 
   // Serve react app
   app.use(express.static(appConfig.webBuildPath));

@@ -22,6 +22,7 @@ import {
 } from '@tabler/icons-react';
 import { JSX, useState } from 'react';
 import { API_URL } from '../../api/api';
+import { useAuth } from '../../auth/auth-context';
 import { formatRelativeDate } from '../../utils/dates';
 import { BookPageCoverSelector } from './components/book-page-cover-selector';
 
@@ -35,6 +36,7 @@ type BookCardProps = {
 
 export function BookCard({ book }: BookCardProps): JSX.Element {
   const media = useMediaQuery(`(max-width: 62em)`);
+  const { authenticated } = useAuth();
   const [isCoverSelectorOpened, { open: openCoverSelector, close: closeCoverSelector }] =
     useDisclosure(false);
   const [coverVersion, setCoverVersion] = useState(0);
@@ -44,60 +46,73 @@ export function BookCard({ book }: BookCardProps): JSX.Element {
     closeCoverSelector();
   };
 
+  const coverImage = (
+    <Image
+      key={`cover-${book.id}-${coverVersion}`}
+      src={`${API_URL}/books/${book.id}/cover?v=${coverVersion}`}
+      h={media ? 150 : 250}
+      alt={book.title}
+      radius="md"
+      fallbackSrc="/book-placeholder-small.png"
+    />
+  );
+
   return (
     <Flex align="center" gap="lg">
-      <Box
-        pos="relative"
-        className={style.CoverContainer}
-        style={{ cursor: 'pointer' }}
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          openCoverSelector();
-        }}
-      >
-        <Image
-          key={`cover-${book.id}-${coverVersion}`}
-          src={`${API_URL}/books/${book.id}/cover?v=${coverVersion}`}
-          h={media ? 150 : 250}
-          alt={book.title}
-          radius="md"
-          fallbackSrc="/book-placeholder-small.png"
-        />
-        <Tooltip label="Change cover" position="right" withArrow>
-          <ActionIcon
-            className={style.EditIcon}
-            variant="filled"
-            color="violet"
-            size="lg"
-            radius="xl"
+      {/* Cover editing is login-only; anonymous users see a plain cover. */}
+      {authenticated ? (
+        <>
+          <Box
+            pos="relative"
+            className={style.CoverContainer}
+            style={{ cursor: 'pointer' }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              openCoverSelector();
+            }}
           >
-            <IconPencil size={18} />
-          </ActionIcon>
-        </Tooltip>
-      </Box>
-      <Modal
-        opened={isCoverSelectorOpened}
-        onClose={closeCoverSelector}
-        title="Change book cover"
-        size="calc(100vw - 3rem)"
-        centered
-      >
-        <Tabs defaultValue="cover-selector" variant="outline">
-          <Tabs.List>
-            <Tabs.Tab value="cover-selector">Select Cover</Tabs.Tab>
-            <Tabs.Tab value="upload-cover">Upload Cover</Tabs.Tab>
-          </Tabs.List>
+            {coverImage}
+            <Tooltip label="Change cover" position="right" withArrow>
+              <ActionIcon
+                className={style.EditIcon}
+                variant="filled"
+                color="violet"
+                size="lg"
+                radius="xl"
+              >
+                <IconPencil size={18} />
+              </ActionIcon>
+            </Tooltip>
+          </Box>
+          <Modal
+            opened={isCoverSelectorOpened}
+            onClose={closeCoverSelector}
+            title="Change book cover"
+            size="calc(100vw - 3rem)"
+            centered
+          >
+            <Tabs defaultValue="cover-selector" variant="outline">
+              <Tabs.List>
+                <Tabs.Tab value="cover-selector">Select Cover</Tabs.Tab>
+                <Tabs.Tab value="upload-cover">Upload Cover</Tabs.Tab>
+              </Tabs.List>
 
-          <Tabs.Panel value="cover-selector" p="md">
-            <BookPageCoverSelector book={book} onSave={handleCoverChange} />
-          </Tabs.Panel>
+              <Tabs.Panel value="cover-selector" p="md">
+                <BookPageCoverSelector book={book} onSave={handleCoverChange} />
+              </Tabs.Panel>
 
-          <Tabs.Panel value="upload-cover" pt="lg" p="md">
-            <BookUploadCover book={book} showTitle={false} onChange={handleCoverChange} />
-          </Tabs.Panel>
-        </Tabs>
-      </Modal>
+              <Tabs.Panel value="upload-cover" pt="lg" p="md">
+                <BookUploadCover book={book} showTitle={false} onChange={handleCoverChange} />
+              </Tabs.Panel>
+            </Tabs>
+          </Modal>
+        </>
+      ) : (
+        <Box pos="relative" className={style.CoverContainer}>
+          {coverImage}
+        </Box>
+      )}
       <div>
         <Flex align="center" gap={8} mt={3}>
           <Tooltip label="Author" position="top" withArrow>
