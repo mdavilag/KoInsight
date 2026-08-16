@@ -1,21 +1,22 @@
 import { BookWithData, PageStat } from '@koinsight/common/types';
 import { Book } from '@koinsight/common/types/book';
-import { Anchor, Flex, Loader, Title } from '@mantine/core';
-import { IconClock } from '@tabler/icons-react';
+import { Anchor, Flex, Loader, Stack, Title } from '@mantine/core';
 import { startOfDay } from 'date-fns/startOfDay';
 import { sum, uniq } from 'ramda';
-import { JSX, useCallback, useMemo } from 'react';
+import { Fragment, JSX, useCallback, useMemo } from 'react';
 import { Link } from 'react-router';
 import { useBooks } from '../api/books';
 import { usePageStats } from '../api/use-page-stats';
+import { CalendarBookDayDetail } from '../components/calendar/calendar-book-day-detail';
+import { CalendarBookDay } from '../components/calendar/calendar-book-day';
 import { Calendar, CalendarEvent } from '../components/calendar/calendar';
 import { getBookPath } from '../routes';
-import { getDuration, shortDuration } from '../utils/dates';
-import { CalendarBookDay } from '../components/calendar/calendar-book-day';
 
 type DayData = {
   events: PageStat[];
 };
+
+const dayDuration = (data: DayData) => sum(data.events.map((event) => event.duration));
 
 export function CalendarPage(): JSX.Element {
   const { data: books, isLoading } = useBooks();
@@ -46,33 +47,36 @@ export function CalendarPage(): JSX.Element {
     return eventsList;
   }, [events, eventsLoading]);
 
+  // Busiest day of the whole range, used to normalise the mobile day dots.
+  const maxDayDuration = useMemo(
+    () => Math.max(1, ...Object.values(calendarEvents).map((e) => dayDuration(e.data!))),
+    [calendarEvents]
+  );
+
   const getBookByMd5 = useCallback(
     (md5: Book['md5']) => books?.find((book) => book.md5 === md5),
     [books]
   );
 
-  const getBookNames = useCallback(
+  /** The books read on a given day, paired with just that day's page stats. */
+  const getDayBooks = useCallback(
     (data: DayData) => {
       const uniqueBookMd5s = uniq(data.events.map(({ book_md5 }) => book_md5));
-      const eventBooks = uniqueBookMd5s.map((id) => getBookByMd5(id)).filter(Boolean) as BookWithData[];
 
-      return eventBooks.map((book) => {
-
-        const bookDayData = data.events.filter((event) => event.book_md5 === book.md5);
-        
-        return (
-          <>
-            <Anchor key={book.id} component={Link} to={getBookPath(book.id)}>
-              {book.title}
-            </Anchor>
-            <br />
-            <CalendarBookDay book={book} data={{ events: bookDayData }} />
-            <br />
-          </>
-        );
-      });
+      return (uniqueBookMd5s.map((id) => getBookByMd5(id)).filter(Boolean) as BookWithData[]).map(
+        (book) => ({
+          book,
+          events: data.events.filter((event) => event.book_md5 === book.md5),
+        })
+      );
     },
     [getBookByMd5]
+  );
+
+  const bookLink = (book: BookWithData) => (
+    <Anchor component={Link} to={getBookPath(book.id)} fw={700}>
+      {book.title}
+    </Anchor>
   );
 
   if (isLoading || !books || !events || eventsLoading) {
@@ -88,7 +92,29 @@ export function CalendarPage(): JSX.Element {
       <Title mb="xl">Calendar</Title>
       <Calendar<DayData>
         events={calendarEvents}
-        dayRenderer={(data) => getBookNames(data).map((el) => <div>{el}</div>)}
+        dayRenderer={(data) =>
+          getDayBooks(data).map(({ book, events: bookEvents }) => (
+            <Fragment key={book.md5}>
+              {bookLink(book)}
+              <br />
+              <CalendarBookDay book={book} data={{ events: bookEvents }} />
+              <br />
+            </Fragment>
+          ))
+        }
+        dayDetailRenderer={(data) => (
+          <Stack gap="lg">
+            {getDayBooks(data).map(({ book, events: bookEvents }) => (
+              <CalendarBookDayDetail
+                key={book.md5}
+                book={book}
+                events={bookEvents}
+                title={bookLink(book)}
+              />
+            ))}
+          </Stack>
+        )}
+        dayIntensity={(data) => dayDuration(data) / maxDayDuration}
       />
     </>
   );

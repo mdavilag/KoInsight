@@ -20,16 +20,16 @@ export function AnnotationFiltersComponent(): JSX.Element {
 
   return (
     <Stack gap="md">
-      <Flex align="center" gap="md">
+      <Flex align="center" gap="md" wrap="wrap">
         <TextInput
           placeholder="Search annotations..."
           leftSection={<IconSearch size={16} />}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.currentTarget.value)}
-          style={{ flex: 1 }}
+          style={{ flex: '1 1 220px' }}
         />
 
-        <Group gap="md" ml="auto">
+        <Group gap="md" ml={{ base: 0, md: 'auto' }}>
           <Checkbox
             label="Highlights"
             checked={types.includes('highlight')}
@@ -53,7 +53,7 @@ export function AnnotationFiltersComponent(): JSX.Element {
         </Group>
       </Flex>
 
-      <Group gap="md">
+      <Group gap="md" wrap="wrap">
         <Tooltip label="Sort by" openDelay={1000} position="top" withArrow>
           <Select
             leftSection={<IconArrowsDownUp size={16} />}
@@ -65,7 +65,7 @@ export function AnnotationFiltersComponent(): JSX.Element {
               { value: 'page-asc', label: 'Page (ascending)' },
               { value: 'page-desc', label: 'Page (descending)' },
             ]}
-            style={{ width: 200 }}
+            style={{ flex: '1 1 180px' }}
           />
         </Tooltip>
 
@@ -79,7 +79,7 @@ export function AnnotationFiltersComponent(): JSX.Element {
               { value: 'type', label: 'By type' },
               { value: 'chapter', label: 'By chapter' },
             ]}
-            style={{ width: 200 }}
+            style={{ flex: '1 1 180px' }}
           />
         </Tooltip>
       </Group>

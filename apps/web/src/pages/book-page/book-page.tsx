@@ -8,6 +8,7 @@ import {
   Menu,
   Paper,
   RingProgress,
+  SimpleGrid,
   Stack,
   Tabs,
   Text,
@@ -25,10 +26,11 @@ import {
   IconTable,
 } from '@tabler/icons-react';
 import { sum } from 'ramda';
-import { JSX, useState } from 'react';
+import { ComponentType, CSSProperties, JSX, useState } from 'react';
 import { useParams } from 'react-router';
 import { useAuth } from '../../auth/auth-context';
 import { useBookWithData } from '../../api/use-book-with-data';
+import { useIsMobile } from '../../hooks/use-is-mobile';
 import { getLatestReadPage } from '../../utils/book-progress';
 import { formatSecondsToHumanReadable } from '../../utils/dates';
 import { BookCard } from './book-card';
@@ -39,6 +41,7 @@ import { BookPageRaw } from './book-page-raw';
 
 export function BookPage(): JSX.Element {
   const { id } = useParams() as { id: string };
+  const isMobile = useIsMobile();
   const { authenticated } = useAuth();
   const { data: book, isLoading, mutate } = useBookWithData(Number(id));
 
@@ -54,10 +57,15 @@ export function BookPage(): JSX.Element {
 
   return (
     <Stack gap="md">
-      <Group justify="space-between" gap="md">
+      <Flex
+        direction={{ base: 'column', md: 'row' }}
+        justify="space-between"
+        align={{ base: 'stretch', md: 'center' }}
+        gap="md"
+      >
         <BookCard book={book} />
         <StatsCard book={book} />
-      </Group>
+      </Flex>
 
       <Group gap="xs">
         {book.genres?.map((genre) => (
@@ -68,8 +76,18 @@ export function BookPage(): JSX.Element {
       </Group>
 
       <Tabs value={tabValue} onChange={(value) => setTabValue(value)}>
-        <Tabs.List style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <Flex>
+        <Tabs.List
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            // Scrollable tab strip — the standard mobile pattern. Without this the
+            // tabs wrap and break the underline, or overflow the viewport.
+            flexWrap: 'nowrap',
+            overflowX: 'auto',
+            scrollbarWidth: 'none',
+          }}
+        >
+          <Flex style={{ flexShrink: 0 }}>
             <Tabs.Tab value="calendar" leftSection={<IconCalendar size={16} />}>
               Calendar
             </Tabs.Tab>
@@ -100,7 +118,8 @@ export function BookPage(): JSX.Element {
                 fz={13}
                 px="md"
                 py="xs"
-                style={{ transition: 'background-color 100ms ease' }}
+                aria-label="Advanced"
+                style={{ transition: 'background-color 100ms ease', flexShrink: 0 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = 'var(--tab-hover-color)';
                 }}
@@ -109,7 +128,8 @@ export function BookPage(): JSX.Element {
                 }}
               >
                 <Flex align="center" gap="xs">
-                  <span>Advanced</span>
+                  {/* The label is dropped on phones so the tab strip keeps the room. */}
+                  {!isMobile && <span>Advanced</span>}
                   <IconChevronDown size={16} />
                 </Flex>
               </UnstyledButton>
@@ -159,6 +179,7 @@ export function BookPage(): JSX.Element {
 }
 
 function StatsCard({ book }: { book: BookWithData }): JSX.Element {
+  const isMobile = useIsMobile();
   const bookPages =
     book?.reference_pages ||
     book?.device_data.reduce((acc, device) => Math.max(acc, device.pages), 0) ||
@@ -173,9 +194,10 @@ function StatsCard({ book }: { book: BookWithData }): JSX.Element {
   return (
     <Paper
       withBorder
-      px="lg"
+      px={{ base: 'md', md: 'lg' }}
       py="md"
       radius="md"
+      w={{ base: '100%', md: 'auto' }}
       style={{
         background:
           'linear-gradient(135deg, var(--mantine-color-default) 0%, var(--mantine-color-body) 100%)',
@@ -185,10 +207,16 @@ function StatsCard({ book }: { book: BookWithData }): JSX.Element {
         <Text size="sm" c="dimmed" tt="uppercase" fw={700}>
           Reading progress
         </Text>
-        <Group align="center" justify="space-between" wrap="nowrap">
+        <Flex
+          direction={{ base: 'column', sm: 'row' }}
+          align="center"
+          justify="space-between"
+          gap="md"
+          w="100%"
+        >
           <Stack align="center" gap="xs">
             <RingProgress
-              size={180}
+              size={isMobile ? 150 : 180}
               thickness={9}
               roundCaps
               label={
@@ -210,62 +238,58 @@ function StatsCard({ book }: { book: BookWithData }): JSX.Element {
             />
           </Stack>
 
-          <Stack gap="md" flex={1}>
-            <Group gap="sm" wrap="nowrap">
-              <IconClock size={18} style={{ flexShrink: 0, opacity: 0.6 }} />
-              <Stack gap={0}>
-                <Text fz={11} c="dimmed" lh={1.2} tt="uppercase" fw="bold">
-                  Total read time
-                </Text>
-                <Text size="md" fw={600}>
-                  {formatSecondsToHumanReadable(book.total_read_time)}
-                </Text>
-              </Stack>
-            </Group>
-
-            <Group gap="sm" wrap="nowrap">
-              <IconClockHour4 size={18} style={{ flexShrink: 0, opacity: 0.6 }} />
-              <Stack gap={0}>
-                <Text fz={11} c="dimmed" lh={1.2} tt="uppercase" fw="bold">
-                  Average per day
-                </Text>
-                <Text size="md" fw={600}>
-                  {formatSecondsToHumanReadable(avgPerDay)}
-                </Text>
-              </Stack>
-            </Group>
-          </Stack>
-
-          <Stack gap="md" flex={1}>
-            <Group gap="sm" wrap="nowrap">
-              <IconCalendar size={18} style={{ flexShrink: 0, opacity: 0.6 }} />
-              <Stack gap={0}>
-                <Text fz={11} c="dimmed" lh={1.2} tt="uppercase" fw="bold">
-                  Days reading
-                </Text>
-                <Text size="md" fw={600}>
-                  {Object.keys(book.read_per_day).length}
-                </Text>
-              </Stack>
-            </Group>
-
-            <Group gap="sm" wrap="nowrap">
-              <IconFile size={18} style={{ flexShrink: 0, opacity: 0.6 }} />
-              <Stack gap={0}>
-                <Text fz={11} c="dimmed" lh={1.2} tt="uppercase" fw="bold">
-                  Avg time per page
-                </Text>
-                <Text size="md" fw={600}>
-                  {book.stats.length > 0
-                    ? Math.round(sum(book.stats.map((p) => p.duration)) / book.stats.length)
-                    : 0}
-                  s
-                </Text>
-              </Stack>
-            </Group>
-          </Stack>
-        </Group>
+          <SimpleGrid cols={2} spacing="md" w="100%" style={{ flex: 1 }}>
+            <Metric
+              icon={IconClock}
+              label="Total read time"
+              value={formatSecondsToHumanReadable(book.total_read_time)}
+            />
+            <Metric
+              icon={IconCalendar}
+              label="Days reading"
+              value={Object.keys(book.read_per_day).length}
+            />
+            <Metric
+              icon={IconClockHour4}
+              label="Average per day"
+              value={formatSecondsToHumanReadable(avgPerDay)}
+            />
+            <Metric
+              icon={IconFile}
+              label="Avg time per page"
+              value={`${
+                book.stats.length > 0
+                  ? Math.round(sum(book.stats.map((p) => p.duration)) / book.stats.length)
+                  : 0
+              }s`}
+            />
+          </SimpleGrid>
+        </Flex>
       </Stack>
     </Paper>
+  );
+}
+
+function Metric({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: ComponentType<{ size: number; style: CSSProperties }>;
+  label: string;
+  value: string | number;
+}): JSX.Element {
+  return (
+    <Group gap="sm" wrap="nowrap">
+      <Icon size={18} style={{ flexShrink: 0, opacity: 0.6 }} />
+      <Stack gap={0} style={{ minWidth: 0 }}>
+        <Text fz={11} c="dimmed" lh={1.2} tt="uppercase" fw="bold">
+          {label}
+        </Text>
+        <Text size="md" fw={600}>
+          {value}
+        </Text>
+      </Stack>
+    </Group>
   );
 }

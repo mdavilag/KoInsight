@@ -25,6 +25,7 @@ import {
 import { groupBy, sum } from 'ramda';
 import { useMemo, useState } from 'react';
 import { Statistics } from '../../components/statistics/statistics';
+import { useIsMobile } from '../../hooks/use-is-mobile';
 import { formatSecondsToHumanReadable } from '../../utils/dates';
 
 export function WeekStats({
@@ -34,6 +35,7 @@ export function WeekStats({
   stats: PageStat[];
   booksByMd5: Record<string, Book>;
 }) {
+  const isMobile = useIsMobile();
   const colorScheme = useComputedColorScheme();
   const { colors } = useMantineTheme();
 
@@ -98,7 +100,8 @@ export function WeekStats({
       const dayStats = stats?.filter((stat) => isSameDay(stat.start_time, day)) ?? [];
 
       perDayResult.push({
-        day: format(day, 'dd MMM yyyy'),
+        // Full dates collide on a phone-width x-axis.
+        day: format(day, isMobile ? 'dd/MM' : 'dd MMM yyyy'),
         duration: sum(dayStats.map((s) => s.duration)),
       });
 
@@ -106,7 +109,7 @@ export function WeekStats({
     }
 
     return perDayResult;
-  }, [stats, weekStart, weekEnd]);
+  }, [stats, weekStart, weekEnd, isMobile]);
 
   return (
     <>
@@ -156,7 +159,7 @@ export function WeekStats({
         ]}
       />
       <AreaChart
-        h={300}
+        h={isMobile ? 220 : 300}
         mt="sm"
         data={perDay}
         dataKey="day"

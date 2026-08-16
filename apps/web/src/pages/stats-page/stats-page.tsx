@@ -17,10 +17,12 @@ import { usePageStats } from '../../api/use-page-stats';
 import { CustomBar } from '../../components/charts/custom-bar';
 import { ReadingCalendar } from '../../components/statistics/reading-calendar';
 import { Statistics } from '../../components/statistics/statistics';
+import { useIsMobile } from '../../hooks/use-is-mobile';
 import { formatSecondsToHumanReadable } from '../../utils/dates';
 import { WeekStats } from './week-stats';
 
 export function StatsPage(): JSX.Element {
+  const isMobile = useIsMobile();
   const colorScheme = useComputedColorScheme();
   const { colors } = useMantineTheme();
   const { data: books, isLoading: booksLoading } = useBooks();
@@ -118,7 +120,7 @@ export function StatsPage(): JSX.Element {
         Per day of the week
       </Title>
       <BarChart
-        h={300}
+        h={isMobile ? 220 : 300}
         data={perDayOfTheWeek}
         dataKey="name"
         series={[
@@ -145,12 +147,13 @@ export function StatsPage(): JSX.Element {
         Monthly reading time
       </Title>
       <BarChart
-        h={300}
+        h={isMobile ? 220 : 300}
         mt="sm"
         data={perMonth}
         dataKey="month"
         gridAxis="none"
         withYAxis={false}
+        xAxisProps={{ interval: isMobile ? 1 : 0 }}
         barProps={{
           maxBarSize: 100,
           shape: (props: BarProps) => (

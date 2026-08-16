@@ -45,13 +45,14 @@ export function BookPageRaw({ book }: BookPageRawProps): JSX.Element {
 
   return (
     <Flex direction="column" gap={20}>
-      <Flex gap={8}>
+      <Flex gap={8} wrap="wrap">
         <NumberInput
           label="Page Number"
           value={page ?? 0}
           onChange={(e) => setPage(Number(e))}
           max={maxPage}
           step={1}
+          flex="1 1 140px"
         />
         <DateInput
           label="Start date"
@@ -59,6 +60,7 @@ export function BookPageRaw({ book }: BookPageRawProps): JSX.Element {
           onChange={(e) => setStartDate(startOfDay(e!))}
           minDate={min}
           maxDate={endDate}
+          flex="1 1 140px"
         />
         <DateInput
           label="End date"
@@ -66,30 +68,33 @@ export function BookPageRaw({ book }: BookPageRawProps): JSX.Element {
           onChange={(e) => setEndDate(endOfDay(e!))}
           minDate={startDate}
           maxDate={max}
+          flex="1 1 140px"
         />
       </Flex>
-      <Table stickyHeader>
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th>Page</Table.Th>
-            <Table.Th>Start time</Table.Th>
-            <Table.Th>Duration</Table.Th>
-            <Table.Th>Total pages</Table.Th>
-            <Table.Th>Device</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>
-          {visibleEvents.map((stat) => (
-            <Table.Tr key={JSON.stringify(stat)}>
-              <Table.Td>{stat.page}</Table.Td>
-              <Table.Td>{formatDate(stat.start_time, 'dd LLL yyyy, HH:mm:ss')}</Table.Td>
-              <Table.Td>{formatSecondsToHumanReadable(stat.duration, false)}</Table.Td>
-              <Table.Td>{stat.total_pages}</Table.Td>
-              <Table.Td>{devicesById[stat.device_id]?.model ?? stat.device_id}</Table.Td>
+      <Table.ScrollContainer minWidth={600}>
+        <Table stickyHeader>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th>Page</Table.Th>
+              <Table.Th>Start time</Table.Th>
+              <Table.Th>Duration</Table.Th>
+              <Table.Th>Total pages</Table.Th>
+              <Table.Th>Device</Table.Th>
             </Table.Tr>
-          ))}
-        </Table.Tbody>
-      </Table>
+          </Table.Thead>
+          <Table.Tbody>
+            {visibleEvents.map((stat) => (
+              <Table.Tr key={JSON.stringify(stat)}>
+                <Table.Td>{stat.page}</Table.Td>
+                <Table.Td>{formatDate(stat.start_time, 'dd LLL yyyy, HH:mm:ss')}</Table.Td>
+                <Table.Td>{formatSecondsToHumanReadable(stat.duration, false)}</Table.Td>
+                <Table.Td>{stat.total_pages}</Table.Td>
+                <Table.Td>{devicesById[stat.device_id]?.model ?? stat.device_id}</Table.Td>
+              </Table.Tr>
+            ))}
+          </Table.Tbody>
+        </Table>
+      </Table.ScrollContainer>
     </Flex>
   );
 }

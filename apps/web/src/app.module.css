@@ -15,19 +15,38 @@
 .Main {
   padding: 4px var(--mantine-spacing-xl);
   overflow-y: auto;
+  /* Without this, flex children can never shrink below their min-content width. */
+  min-width: 0;
   flex-grow: 1;
 }
 
 @media (max-width: $mantine-breakpoint-md) {
   .App {
     flex-direction: column;
-    height: 100vh;
+    /* Let the document scroll instead of an inner container, so the browser's
+       URL bar collapses on scroll. dvh tracks that bar; vh does not. */
+    height: auto;
+    /* Leave room for the footer credit line that renders below .App. */
+    min-height: calc(100dvh - 32px);
     max-width: 100vw;
-    padding-block: var(--mantine-spacing-md);
-    margin: 0 auto;
+    padding-block: 0;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
   }
 
   .Main {
-    padding: 0 var(--mantine-spacing-lg);
+    padding: 0 var(--mantine-spacing-md) var(--mantine-spacing-md);
+    overflow: visible;
+  }
+
+  .MobileHeader {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    margin-bottom: var(--mantine-spacing-md);
+    padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
+    background-color: light-dark(#fff, var(--mantine-color-dark-8));
+    border-bottom: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
   }
 }

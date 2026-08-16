@@ -11,7 +11,7 @@ import {
   Title,
   Tooltip,
 } from '@mantine/core';
-import { useDisclosure, useLocalStorage, useMediaQuery } from '@mantine/hooks';
+import { useDisclosure, useLocalStorage } from '@mantine/hooks';
 import {
   IconArrowsDownUp,
   IconCards,
@@ -24,13 +24,14 @@ import {
 import { JSX, useState } from 'react';
 import { useBooks } from '../../api/books';
 import { EmptyState } from '../../components/empty-state/empty-state';
+import { useIsMobile } from '../../hooks/use-is-mobile';
 import { BooksCards } from './books-cards';
 import { BooksTable } from './books-table';
 
 import style from './books-page.module.css';
 
 export function BooksPage(): JSX.Element {
-  const media = useMediaQuery(`(max-width: 62em)`);
+  const media = useIsMobile();
 
   const [mode, setMode] = useLocalStorage<'table' | 'cards'>({
     key: 'koinsight-books-search',
@@ -141,7 +142,7 @@ export function BooksPage(): JSX.Element {
             </Button>
           </Tooltip>
         </Flex>
-        <Group align="center">
+        <Group align="center" wrap="wrap">
           <Tooltip
             openDelay={1000}
             label={`Sort ${sortBy.direction === 'asc' ? 'descending' : 'ascending'}`}
@@ -167,7 +168,8 @@ export function BooksPage(): JSX.Element {
           <Tooltip label="Sort by" openDelay={1000} position="top" withArrow>
             <Select
               leftSection={<IconArrowsDownUp size={16} />}
-              w={150}
+              w={media ? undefined : 150}
+              flex={media ? '1 1 140px' : undefined}
               value={sortBy.key}
               allowDeselect={false}
               onChange={(value) => setSortBy((prev) => ({ ...prev, key: value as keyof Book }))}

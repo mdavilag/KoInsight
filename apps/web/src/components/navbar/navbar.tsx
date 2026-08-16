@@ -1,28 +1,18 @@
-import {
-  ActionIcon,
-  Box,
-  Flex,
-  useComputedColorScheme,
-  useMantineColorScheme,
-} from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
+import { ActionIcon, Box, Flex } from '@mantine/core';
 import {
   IconBooks,
   IconCalendar,
   IconChartBar,
-  IconDownload,
   IconLogin,
   IconLogout,
-  IconMoon,
   IconReload,
-  IconSun,
 } from '@tabler/icons-react';
 import { JSX, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../../auth/auth-context';
 import { RoutePath } from '../../routes';
+import { ColorSchemeToggle } from '../color-scheme-toggle/color-scheme-toggle';
 import { Logo } from '../logo/logo';
-import { DownloadPluginModal } from './download-plugin';
 
 import style from './navbar.module.css';
 
@@ -30,11 +20,6 @@ export function Navbar({ onNavigate }: { onNavigate?: () => void }): JSX.Element
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { authenticated, logout } = useAuth();
-  const { setColorScheme } = useMantineColorScheme();
-  const computedColorScheme = useComputedColorScheme();
-  const toggleColorScheme = () => {
-    setColorScheme(computedColorScheme === 'dark' ? 'light' : 'dark');
-  };
 
   const handleLogout = async () => {
     await logout();
@@ -47,20 +32,13 @@ export function Navbar({ onNavigate }: { onNavigate?: () => void }): JSX.Element
     navigate(RoutePath.LOGIN);
   };
 
-  const [downloadOpened, { close: closeDownload, open: openDownload }] = useDisclosure(false);
-
-  // Read-only tabs are always visible; login-only tabs (Progress syncs, plugin
-  // download) only appear once authenticated.
+  // Read-only tabs are always visible; login-only tabs (Progress syncs) only
+  // appear once authenticated.
   const tabs = [
     { link: RoutePath.BOOKS, label: 'Books', icon: IconBooks },
     { link: RoutePath.CALENDAR, label: 'Calendar', icon: IconCalendar },
     { link: RoutePath.STATS, label: 'Reading stats', icon: IconChartBar },
-    ...(authenticated
-      ? [
-          { link: RoutePath.SYNCS, label: 'Progress syncs', icon: IconReload },
-          { onClick: openDownload, label: 'KOReader Plugin', icon: IconDownload },
-        ]
-      : []),
+    ...(authenticated ? [{ link: RoutePath.SYNCS, label: 'Progress syncs', icon: IconReload }] : []),
   ];
 
   const [active, setActive] = useState(
@@ -72,25 +50,18 @@ export function Navbar({ onNavigate }: { onNavigate?: () => void }): JSX.Element
     onNavigate?.();
   };
 
-  const links = tabs.map((item) =>
-    item.link ? (
-      <NavLink
-        className={style.Link}
-        data-active={item.link === active || undefined}
-        to={item.link}
-        key={item.label}
-        onClick={() => onClick(item.link)}
-      >
-        <item.icon className={style.LinkIcon} stroke={1.5} />
-        <span>{item.label}</span>
-      </NavLink>
-    ) : (
-      <a className={style.Link} key={item.label} onClick={() => item.onClick()}>
-        <item.icon className={style.LinkIcon} stroke={1.5} />
-        <span>{item.label}</span>
-      </a>
-    )
-  );
+  const links = tabs.map((item) => (
+    <NavLink
+      className={style.Link}
+      data-active={item.link === active || undefined}
+      to={item.link}
+      key={item.label}
+      onClick={() => onClick(item.link)}
+    >
+      <item.icon className={style.LinkIcon} stroke={1.5} />
+      <span>{item.label}</span>
+    </NavLink>
+  ));
 
   return (
     <Box className={style.Navbar} component="nav">
@@ -126,21 +97,9 @@ export function Navbar({ onNavigate }: { onNavigate?: () => void }): JSX.Element
               <IconLogin stroke={1.5} />
             </ActionIcon>
           )}
-          <ActionIcon
-            onClick={toggleColorScheme}
-            variant="default"
-            size="lg"
-            aria-label="Toggle color scheme"
-          >
-            {computedColorScheme === 'dark' ? (
-              <IconSun stroke={1.5} color="yellow" />
-            ) : (
-              <IconMoon stroke={1.5} color="violet" />
-            )}
-          </ActionIcon>
+          <ColorSchemeToggle />
         </Flex>
       </div>
-      <DownloadPluginModal opened={downloadOpened} onClose={closeDownload} />
     </Box>
   );
 }

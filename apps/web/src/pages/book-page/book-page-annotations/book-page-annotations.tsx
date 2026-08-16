@@ -122,7 +122,6 @@ export function BookPageAnnotations({ book }: BookPageAnnotationsProps) {
 }
 
 function AnnotationsList({ annotations }: { annotations: Annotation[] }) {
-  console.log({ annotations });
   return (
     <Stack gap="md">
       {annotations.map((annotation) => (

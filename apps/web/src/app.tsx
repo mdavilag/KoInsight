@@ -18,6 +18,7 @@ import { JSX } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
 import style from './app.module.css';
 import { RequireAuth } from './auth/auth-context';
+import { ColorSchemeToggle } from './components/color-scheme-toggle/color-scheme-toggle';
 import { Logo } from './components/logo/logo';
 import { Navbar } from './components/navbar/navbar';
 import { BookPage } from './pages/book-page/book-page';
@@ -46,6 +47,13 @@ const theme = createTheme({
       '#009087',
     ],
   },
+  components: {
+    // Tooltips carry real information here (page ranges, series, hidden state).
+    // Mantine's default is hover-only, which hides all of it on touch devices.
+    Tooltip: {
+      defaultProps: { events: { hover: true, focus: true, touch: true } },
+    },
+  },
 });
 
 function AppLayout(): JSX.Element {
@@ -54,11 +62,12 @@ function AppLayout(): JSX.Element {
   return (
     <>
       <div className={style.App}>
-        <Group hiddenFrom="md" align="center" gap="sm" mb="lg" ml="md">
-          <Burger size="sm" onClick={() => openDrawer()} />
+        <Group hiddenFrom="md" className={style.MobileHeader} align="center" gap="sm" wrap="nowrap">
+          <Burger size="sm" onClick={() => openDrawer()} aria-label="Open navigation" />
           <Logo />
+          <ColorSchemeToggle ml="auto" />
         </Group>
-        <Drawer opened={drawerOpened} onClose={closeDrawer}>
+        <Drawer opened={drawerOpened} onClose={closeDrawer} size="80%" padding="md">
           <Navbar onNavigate={closeDrawer} />
         </Drawer>
         <Box visibleFrom="md">

@@ -38,6 +38,19 @@
   }
 }
 
+/* Touch devices have no hover, so the slide-up panel would never appear and the
+   card metadata would be permanently invisible on phones. Pin it open instead. */
+@media (hover: none) {
+  .Card .CardDetails {
+    position: static;
+    bottom: auto;
+    opacity: 1;
+    background: transparent;
+    backdrop-filter: none;
+    padding-block: var(--mantine-spacing-xs);
+  }
+}
+
 .Attribute {
   font-size: var(--mantine-font-size-xs);
   color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-gray-6));

@@ -1,5 +1,5 @@
 import cors from 'cors';
-import express, { Request, Response } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import { Server } from 'http';
 import morgan from 'morgan';
 import path from 'path';
@@ -18,10 +18,26 @@ import { uploadRouter } from './upload/upload-router';
 
 async function setupServer() {
   const app = express();
+
+  app.use(
+    morgan(':method :url :status :res[content-length] - :response-time ms in=:req[content-length]')
+  );
+
+  app.use((req, res, next) => {
+    res.on('close', () => {
+      if (!res.writableEnded) {
+        console.warn(
+          `[aborted] ${req.method} ${req.originalUrl} — connection dropped before the response finished ` +
+            `(declared ${req.headers['content-length'] ?? 'unknown'} bytes, ua="${req.headers['user-agent'] ?? '-'}")`
+        );
+      }
+    });
+    next();
+  });
+
   // Increase the limit to be able to upload the whole database
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
-  app.use(morgan('tiny'));
 
   // if (appConfig.env === 'development') {
   // Allow requests from dev build
@@ -51,6 +67,32 @@ async function setupServer() {
   app.use(express.static(appConfig.webBuildPath));
   app.get(/.*/, (_req: Request, res: Response) => {
     res.sendFile(path.join(appConfig.webBuildPath, 'index.html'));
+  });
+
+  // Without this, body parser failures produce a bare stack trace with no
+  // indication of which request caused it. `received`/`limit` are set by
+  // body-parser on payload-too-large errors.
+  app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
+    const status = err.status ?? err.statusCode ?? 500;
+
+    console.error(
+      `[error] ${req.method} ${req.originalUrl} -> ${status} ` +
+        `type=${err.type ?? err.code ?? err.name} ` +
+        `declared=${req.headers['content-length'] ?? '-'} ` +
+        `received=${err.received ?? '-'} limit=${err.limit ?? '-'} ` +
+        `ua="${req.headers['user-agent'] ?? '-'}" msg=${err.message}`
+    );
+
+    if (status >= 500) {
+      console.error(err);
+    }
+
+    if (res.headersSent) {
+      return;
+    }
+
+    // 4xx from body-parser are safe to surface (err.expose); 5xx are not.
+    res.status(status).json({ error: err.expose ? err.message : 'Internal server error' });
   });
 
   // Start :)

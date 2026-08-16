@@ -10,7 +10,7 @@ export default ({ mode }) => {
 
   return defineConfig({
     plugins: [react(), svgr()],
-    css: { postcss: './postcss.config.cjs' },
+    css: { postcss: './postcss.config.js' },
     server: {
       host: HOST,
       port: PORT,

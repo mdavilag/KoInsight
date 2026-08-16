@@ -1,10 +1,10 @@
 import { BookWithData } from '@koinsight/common/types';
 import { Anchor, Flex, Image, Progress, Stack, Table, Tooltip } from '@mantine/core';
-import { useMediaQuery } from '@mantine/hooks';
 import { IconEyeClosed, IconHighlight } from '@tabler/icons-react';
 import { JSX } from 'react';
 import { NavLink } from 'react-router';
 import { API_URL } from '../../api/api';
+import { useIsMobile } from '../../hooks/use-is-mobile';
 import { getBookPath } from '../../routes';
 import { formatRelativeDate, getDuration, shortDuration } from '../../utils/dates';
 import style from './books-table.module.css';
@@ -14,7 +14,7 @@ type BooksTableProps = {
 };
 
 export function BooksTable({ books }: BooksTableProps): JSX.Element {
-  const media = useMediaQuery(`(max-width: 62em)`);
+  const media = useIsMobile();
 
   return (
     <Table>

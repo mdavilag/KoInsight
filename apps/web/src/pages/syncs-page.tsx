@@ -57,8 +57,14 @@ export function SyncsPage() {
 
               <Flex gap="sm" wrap="wrap">
                 {progresses?.map((progress) => (
-                  <Card padding="lg" radius="md" withBorder>
-                    <Flex direction="column" key={progress.id} gap="xs">
+                  <Card
+                    key={progress.id}
+                    padding="lg"
+                    radius="md"
+                    withBorder
+                    w={{ base: '100%', sm: 'auto' }}
+                  >
+                    <Flex direction="column" gap="xs">
                       <Flex gap="xs" align="center">
                         <Tooltip withArrow label="Username">
                           <IconUser size={18} />
@@ -85,7 +91,7 @@ export function SyncsPage() {
                           </>
                         ) : (
                           <>
-                            MD5: <Code>{progress.document}</Code>
+                            MD5: <Code style={{ wordBreak: 'break-all' }}>{progress.document}</Code>
                           </>
                         )}
                       </Flex>

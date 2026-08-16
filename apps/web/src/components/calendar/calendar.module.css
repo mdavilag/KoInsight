@@ -2,11 +2,12 @@
   --border-color: light-dark(var(--mantine-color-gray-4), var(--mantine-color-gray-7));
   width: 100%;
   margin: auto;
-  overflow: hidden;
 }
 
 .CalendarHeader {
   display: flex;
+  flex-wrap: wrap;
+  gap: var(--mantine-spacing-xs);
   justify-content: space-between;
   align-items: center;
   padding: var(--mantine-spacing-xs);
@@ -15,13 +16,17 @@
 
 .CalendarGrid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  /* minmax(0, 1fr) — plain `1fr` means minmax(auto, 1fr), which floors each
+     column at its min-content width and blows the grid past the viewport. */
+  grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
 .CalendarDate {
   padding: var(--mantine-spacing-xs);
   border: 1px solid var(--border-color);
   min-height: 150px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .CalendarDay {
@@ -42,4 +47,52 @@
 
 .CalendarDateDisabled {
   color: var(--mantine-color-gray-5);
+}
+
+.CalendarDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--mantine-color-koinsight-8);
+  /* Hidden on desktop, where the cell shows the full event content instead. */
+  display: none;
+}
+
+@media (max-width: $mantine-breakpoint-md) {
+  /* A 7-column grid cannot carry book titles at phone widths. Each cell becomes
+     a compact square (day number + intensity dot); the detail moves to a
+     bottom Drawer opened by tapping the day. */
+  .CalendarDate {
+    min-height: 0;
+    aspect-ratio: 1;
+    padding: 2px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+  }
+
+  .CalendarDay {
+    text-align: center;
+    font-size: var(--mantine-font-size-sm);
+    margin-bottom: 0;
+  }
+
+  .CalendarEvent {
+    display: none;
+  }
+
+  .CalendarDot {
+    display: block;
+  }
+
+  .CalendarDateInteractive {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .CalendarDateInteractive:active {
+    background-color: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-5));
+  }
 }

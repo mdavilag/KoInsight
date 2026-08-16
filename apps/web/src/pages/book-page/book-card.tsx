@@ -11,7 +11,7 @@ import {
   Title,
   Tooltip,
 } from '@mantine/core';
-import { useDisclosure, useMediaQuery } from '@mantine/hooks';
+import { useDisclosure } from '@mantine/hooks';
 import {
   IconBooks,
   IconCalendar,
@@ -23,6 +23,7 @@ import {
 import { JSX, useState } from 'react';
 import { API_URL } from '../../api/api';
 import { useAuth } from '../../auth/auth-context';
+import { useIsMobile } from '../../hooks/use-is-mobile';
 import { formatRelativeDate } from '../../utils/dates';
 import { BookPageCoverSelector } from './components/book-page-cover-selector';
 
@@ -35,7 +36,7 @@ type BookCardProps = {
 };
 
 export function BookCard({ book }: BookCardProps): JSX.Element {
-  const media = useMediaQuery(`(max-width: 62em)`);
+  const media = useIsMobile();
   const { authenticated } = useAuth();
   const [isCoverSelectorOpened, { open: openCoverSelector, close: closeCoverSelector }] =
     useDisclosure(false);
@@ -58,7 +59,7 @@ export function BookCard({ book }: BookCardProps): JSX.Element {
   );
 
   return (
-    <Flex align="center" gap="lg">
+    <Flex align={{ base: 'flex-start', md: 'center' }} gap="lg" wrap="wrap">
       {/* Cover editing is login-only; anonymous users see a plain cover. */}
       {authenticated ? (
         <>
@@ -113,7 +114,7 @@ export function BookCard({ book }: BookCardProps): JSX.Element {
           {coverImage}
         </Box>
       )}
-      <div>
+      <div style={{ flex: '1 1 200px', minWidth: 0 }}>
         <Flex align="center" gap={8} mt={3}>
           <Tooltip label="Author" position="top" withArrow>
             <IconUser stroke={1.5} size={16} />
@@ -121,7 +122,9 @@ export function BookCard({ book }: BookCardProps): JSX.Element {
           <span className={style.Author}>{book.authors ?? 'N/A'}</span>
         </Flex>
 
-        <Title fw="800">{book.title}</Title>
+        <Title fw="800" order={media ? 3 : 1} style={{ wordBreak: 'break-word' }}>
+          {book.title}
+        </Title>
 
         <Flex align="center" gap={8} mt="sm">
           <Tooltip label="Series" position="top" withArrow>

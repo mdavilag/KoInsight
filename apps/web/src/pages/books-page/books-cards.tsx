@@ -1,6 +1,5 @@
 import { BookWithData } from '@koinsight/common/types';
 import { Box, Group, Image, Progress, Text, Tooltip } from '@mantine/core';
-import { useMediaQuery } from '@mantine/hooks';
 import {
   IconBooks,
   IconEyeClosed,
@@ -12,6 +11,7 @@ import C from 'clsx';
 import { JSX } from 'react';
 import { useNavigate } from 'react-router';
 import { API_URL } from '../../api/api';
+import { useIsMobile } from '../../hooks/use-is-mobile';
 import { getBookPath } from '../../routes';
 
 import style from './books-cards.module.css';
@@ -22,7 +22,7 @@ type BooksCardsProps = {
 
 export function BooksCards({ books }: BooksCardsProps): JSX.Element {
   const navigate = useNavigate();
-  const isSmallScreen = useMediaQuery(`(max-width: 62em)`);
+  const isSmallScreen = useIsMobile();
 
   const cardWidth = isSmallScreen ? 120 : 200;
 
@@ -57,7 +57,10 @@ export function BooksCards({ books }: BooksCardsProps): JSX.Element {
             value={(book.unique_read_pages / book.total_pages) * 100}
             color="koinsight"
           />
-          <Box px="lg" className={C(style.CardDetails, { [style.Small]: isSmallScreen })}>
+          <Box
+            px={isSmallScreen ? 'xs' : 'lg'}
+            className={C(style.CardDetails, { [style.Small]: isSmallScreen })}
+          >
             <Text fz="md" fw={600} style={{ wordBreak: 'break-word', whiteSpace: 'wrap' }}>
               {book.title}
             </Text>
