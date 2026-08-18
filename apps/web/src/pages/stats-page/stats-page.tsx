@@ -75,9 +75,12 @@ export function StatsPage(): JSX.Element {
         fw={900}
       >
         {last7DaysReadTime > 0 ? (
-          <>You read for {formatSecondsToHumanReadable(last7DaysReadTime)} this week. Keep it up!</>
+          <>
+            You read for {formatSecondsToHumanReadable(last7DaysReadTime)} in the last 7 days. Keep
+            it up!
+          </>
         ) : (
-          <>You haven't read this week yet. No better time to start!</>
+          <>You haven't read in the last 7 days. No better time to start!</>
         )}
       </Text>
       <Box my="xl">
