@@ -1,0 +1,46 @@
+name: pipeline-dev
+
+# Publishes kinanino/koinsight:dev on every push to development.
+on:
+  push:
+    branches: [development]
+  workflow_dispatch:
+
+# A second push while a build is running makes the first one pointless.
+concurrency:
+  group: pipeline-dev
+  cancel-in-progress: true
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    # Forks of this fork have no Docker Hub credentials; without this they fail
+    # on every push with a confusing login error.
+    if: github.repository == 'mdavilag/KoInsight'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          # The moving tag is what the server follows; the sha tag is what you
+          # pin to when a deploy has to be rolled back.
+          tags: |
+            kinanino/koinsight:dev
+            kinanino/koinsight:dev-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
