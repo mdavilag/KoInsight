@@ -11,6 +11,7 @@ import C from 'clsx';
 import { JSX } from 'react';
 import { useNavigate } from 'react-router';
 import { API_URL } from '../../api/api';
+import { BookStatusBadge } from '../../components/book-status-badge/book-status-badge';
 import { useIsMobile } from '../../hooks/use-is-mobile';
 import { getBookPath } from '../../routes';
 
@@ -51,12 +52,7 @@ export function BooksCards({ books }: BooksCardsProps): JSX.Element {
             fallbackSrc="/book-placeholder-small.png"
             className={book.soft_deleted ? style.BookHidden : undefined}
           />
-          <Progress
-            radius={0}
-            h={5}
-            value={(book.unique_read_pages / book.total_pages) * 100}
-            color="koinsight"
-          />
+          <Progress radius={0} h={5} value={book.read_percentage} color="koinsight" />
           <Box
             px={isSmallScreen ? 'xs' : 'lg'}
             className={C(style.CardDetails, { [style.Small]: isSmallScreen })}
@@ -95,10 +91,13 @@ export function BooksCards({ books }: BooksCardsProps): JSX.Element {
                     <IconProgress stroke={1.5} size={16} />
                   </Tooltip>
                   <span className={style.Attribute}>
-                    {book.unique_read_pages}
+                    {book.current_page}
                     &nbsp;/&nbsp;
                     {book.total_pages} pages read
                   </span>
+                </Group>
+                <Group wrap="nowrap" gap={8} mt={4}>
+                  <BookStatusBadge status={book.status} />
                 </Group>
               </>
             )}

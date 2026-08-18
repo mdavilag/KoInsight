@@ -6,6 +6,7 @@ import { NavLink } from 'react-router';
 import { API_URL } from '../../api/api';
 import { useIsMobile } from '../../hooks/use-is-mobile';
 import { getBookPath } from '../../routes';
+import { BookStatusBadge } from '../../components/book-status-badge/book-status-badge';
 import { formatRelativeDate, getDuration, shortDuration } from '../../utils/dates';
 import style from './books-table.module.css';
 
@@ -25,6 +26,7 @@ export function BooksTable({ books }: BooksTableProps): JSX.Element {
             Read
           </Table.Th>
           <Table.Th visibleFrom="md">Pages</Table.Th>
+          <Table.Th visibleFrom="md">Status</Table.Th>
           <Table.Th visibleFrom="md">Total read time</Table.Th>
           <Table.Th visibleFrom="md">Last open</Table.Th>
         </Table.Tr>
@@ -75,14 +77,17 @@ export function BooksTable({ books }: BooksTableProps): JSX.Element {
               </Flex>
             </Table.Td>
             <Table.Td visibleFrom="md">
-              {book.unique_read_pages}
+              {book.current_page}
               <Progress
-                value={(book.unique_read_pages / book.total_pages) * 100}
+                value={book.read_percentage}
                 aria-label="Percentage read"
-                aria-valuetext={String((book.unique_read_pages / book.total_pages) * 100)}
+                aria-valuetext={String(book.read_percentage)}
               />
             </Table.Td>
             <Table.Td visibleFrom="md">{book.total_pages}</Table.Td>
+            <Table.Td visibleFrom="md">
+              <BookStatusBadge status={book.status} />
+            </Table.Td>
             <Table.Td visibleFrom="md">
               {book.total_read_time ? shortDuration(getDuration(book.total_read_time)) : 'N/A'}
             </Table.Td>

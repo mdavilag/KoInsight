@@ -71,6 +71,7 @@ describe('books-router', () => {
         .put(`/books/${book.id}/reference_pages`)
         .send({ reference_pages: 100 })
         .expect(401);
+      await request(app).put(`/books/${book.id}/status`).send({ status: 'read' }).expect(401);
     });
 
     it('still allows anonymous reads', async () => {
@@ -169,6 +170,49 @@ describe('books-router', () => {
         .send({});
       expect(response.status).toBe(400);
       expect(response.body).toEqual({ error: 'Missing required fields' });
+    });
+  });
+
+  describe('PUT /books/:bookId/status', () => {
+    it('sets a status override', async () => {
+      const book = await createBook(db);
+
+      const response = await request(app)
+        .put(`/books/${book.id}/status`)
+        .set('Cookie', authCookie)
+        .send({ status: 'read' });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ message: 'Book status updated' });
+
+      const updated = await db('book').where({ id: book.id }).first();
+      expect(updated.status_override).toBe('read');
+    });
+
+    it('clears the override when the status is null', async () => {
+      const book = await createBook(db, { status_override: 'read' });
+
+      const response = await request(app)
+        .put(`/books/${book.id}/status`)
+        .set('Cookie', authCookie)
+        .send({ status: null });
+
+      expect(response.status).toBe(200);
+
+      const updated = await db('book').where({ id: book.id }).first();
+      expect(updated.status_override).toBeNull();
+    });
+
+    it('returns 400 for an unknown status', async () => {
+      const book = await createBook(db);
+
+      const response = await request(app)
+        .put(`/books/${book.id}/status`)
+        .set('Cookie', authCookie)
+        .send({ status: 'finished' });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({ error: 'Invalid status' });
     });
   });
 });

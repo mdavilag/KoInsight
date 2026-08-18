@@ -3,7 +3,7 @@ import { Group, Stack, Text } from '@mantine/core';
 import { IconClock, IconPageBreak } from '@tabler/icons-react';
 import { sum } from 'ramda';
 import { JSX, ReactNode } from 'react';
-import { getReferencePageRange } from '../../utils/book-progress';
+import { describeReferencePageRange, getReferencePageRange } from '../../utils/book-progress';
 import { formatSecondsToHumanReadable } from '../../utils/dates';
 
 type CalendarBookDayDetailProps = {
@@ -22,9 +22,7 @@ export function CalendarBookDayDetail({
   events,
   title,
 }: CalendarBookDayDetailProps): JSX.Element {
-  const [start, end] = getReferencePageRange(book, events);
-  const from = Math.round(start);
-  const to = Math.round(end);
+  const { from, to, count } = describeReferencePageRange(getReferencePageRange(book, events));
 
   return (
     <Stack gap={4}>
@@ -36,7 +34,7 @@ export function CalendarBookDayDetail({
       <Group gap="xs" wrap="nowrap">
         <IconPageBreak size={16} style={{ flexShrink: 0, opacity: 0.6 }} />
         <Text size="sm">
-          Pages {from} – {to} ({to - from} pages)
+          Pages {from} – {to} ({count} {count === 1 ? 'page' : 'pages'})
         </Text>
       </Group>
     </Stack>

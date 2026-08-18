@@ -1,4 +1,4 @@
-import { Book, BookWithData } from '@koinsight/common/types';
+import { BookWithData, ReadingStatus } from '@koinsight/common/types';
 import {
   Button,
   Checkbox,
@@ -6,7 +6,10 @@ import {
   Group,
   Loader,
   Modal,
+  SegmentedControl,
   Select,
+  Stack,
+  Text,
   TextInput,
   Title,
   Tooltip,
@@ -30,6 +33,8 @@ import { BooksTable } from './books-table';
 
 import style from './books-page.module.css';
 
+type StatusFilter = 'all' | ReadingStatus;
+
 export function BooksPage(): JSX.Element {
   const media = useIsMobile();
 
@@ -46,6 +51,11 @@ export function BooksPage(): JSX.Element {
     defaultValue: false,
   });
 
+  const [statusFilter, setStatusFilter] = useLocalStorage<StatusFilter>({
+    key: 'koinsight-books-status-filter',
+    defaultValue: 'all',
+  });
+
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useLocalStorage<{
     key: keyof BookWithData;
@@ -60,7 +70,7 @@ export function BooksPage(): JSX.Element {
 
   const { data: books, isLoading, error } = useBooks({ showHidden: showHiddenBooks });
 
-  const visibleBooks =
+  const searchedBooks =
     searchTerm.length === 0
       ? (books ?? [])
       : (books ?? []).filter((book) =>
@@ -68,6 +78,11 @@ export function BooksPage(): JSX.Element {
             .map((value) => value?.toLowerCase())
             .some((v) => v?.includes(searchTerm.toLowerCase()))
         );
+
+  const visibleBooks =
+    statusFilter === 'all'
+      ? searchedBooks
+      : searchedBooks.filter((book) => book.status === statusFilter);
 
   const sortedBooks = visibleBooks.sort((a, b) => {
     const { key: sort, direction } = sortBy;
@@ -172,7 +187,9 @@ export function BooksPage(): JSX.Element {
               flex={media ? '1 1 140px' : undefined}
               value={sortBy.key}
               allowDeselect={false}
-              onChange={(value) => setSortBy((prev) => ({ ...prev, key: value as keyof Book }))}
+              onChange={(value) =>
+                setSortBy((prev) => ({ ...prev, key: value as keyof BookWithData }))
+              }
               data={
                 [
                   { label: 'Added', value: 'id' },
@@ -180,7 +197,9 @@ export function BooksPage(): JSX.Element {
                   { label: 'Author', value: 'authors' },
                   { label: 'Read time', value: 'total_read_time' },
                   { label: 'Last open', value: 'last_open' },
-                ] as { label: string; value: keyof Book }[]
+                  { label: 'Progress', value: 'read_percentage' },
+                  { label: 'Status', value: 'status' },
+                ] as { label: string; value: keyof BookWithData }[]
               }
               defaultValue="title"
             />
@@ -221,11 +240,28 @@ export function BooksPage(): JSX.Element {
         radius="lg"
         centered
       >
-        <Checkbox
-          checked={showHiddenBooks}
-          onChange={(v) => setShowHiddenBooks(v.target.checked)}
-          label="View hidden books"
-        />
+        <Stack gap="lg">
+          <Checkbox
+            checked={showHiddenBooks}
+            onChange={(v) => setShowHiddenBooks(v.target.checked)}
+            label="View hidden books"
+          />
+          <Stack gap={6}>
+            <Text size="sm" fw={500}>
+              Reading status
+            </Text>
+            <SegmentedControl
+              fullWidth
+              value={statusFilter}
+              onChange={(value) => setStatusFilter(value as StatusFilter)}
+              data={[
+                { label: 'All', value: 'all' },
+                { label: 'Reading', value: 'reading' },
+                { label: 'Read', value: 'read' },
+              ]}
+            />
+          </Stack>
+        </Stack>
       </Modal>
     </>
   );

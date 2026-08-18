@@ -1,4 +1,4 @@
-import { Book, BookDevice, Device } from '@koinsight/common/types';
+import { Book, BookDevice, BookWithData, Device } from '@koinsight/common/types';
 import { range } from 'ramda';
 import { createBookDevice } from '../db/factories/book-device-factory';
 import { createBook } from '../db/factories/book-factory';
@@ -224,5 +224,23 @@ describe(StatsService, () => {
       const result = await StatsService.perDayOfTheWeek([]);
       expect(result).toEqual([]);
     });
+  });
+});
+
+describe(StatsService.totalPagesRead, () => {
+  it('sums how far each book has been read', () => {
+    const books = [{ current_page: 250 }, { current_page: 26 }] as BookWithData[];
+
+    expect(StatsService.totalPagesRead(books)).toEqual(276);
+  });
+
+  it('ignores KOReader page-turn counts, which double-count re-reads', () => {
+    const books = [{ current_page: 100, total_read_pages: 340 }] as BookWithData[];
+
+    expect(StatsService.totalPagesRead(books)).toEqual(100);
+  });
+
+  it('returns 0 with no books', () => {
+    expect(StatsService.totalPagesRead([])).toEqual(0);
   });
 });

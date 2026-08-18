@@ -13,7 +13,7 @@ import {
 import { useDisclosure } from '@mantine/hooks';
 import { ModalsProvider } from '@mantine/modals';
 import { Notifications } from '@mantine/notifications';
-import { IconError404, IconHeart } from '@tabler/icons-react';
+import { IconError404 } from '@tabler/icons-react';
 import { JSX } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
 import style from './app.module.css';
@@ -101,9 +101,13 @@ function AppLayout(): JSX.Element {
         </main>
       </div>
       <Text size="xs" ta="center" c="dimmed">
-        Made with <IconHeart size={10} /> by{' '}
+        Forked from{' '}
         <Anchor href="https://gar.dev" target="_blank">
           gar.dev
+        </Anchor>{' '}
+        - maintained by{' '}
+        <Anchor href="https://github.com/mdavilag" target="_blank">
+          mdavilag
         </Anchor>
         . {version}
       </Text>

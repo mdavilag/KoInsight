@@ -23,7 +23,15 @@ export type DbBook = {
   language: string;
 };
 
+/**
+ * Whether the book is still being read or has been finished.
+ * Derived from the reading statistics unless `Book['status_override']` is set.
+ */
+export type ReadingStatus = 'reading' | 'read';
+
 export type Book = DbBook & {
   soft_deleted: boolean;
   reference_pages: number | null;
+  /** Manually set status. `null` means the status is derived from the statistics. */
+  status_override: ReadingStatus | null;
 };
