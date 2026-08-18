@@ -72,8 +72,14 @@ export class StatsService {
     return sum(lastSevenDays.map((s) => s.duration));
   }
 
+  /**
+   * Sum of how far each book has been read, using the same definition as the book list
+   * and the book page. Deliberately not `total_read_pages`, which is KOReader's page-turn
+   * counter: it counts a page again on every re-read, so it disagrees with every
+   * per-book number the dashboard links to.
+   */
   static totalPagesRead(books: BookWithData[]) {
-    return books.reduce((acc, book) => acc + book.total_read_pages, 0);
+    return books.reduce((acc, book) => acc + book.current_page, 0);
   }
 
   private static getPagesPerDay(stats: PageStat[], books: Book[]) {
