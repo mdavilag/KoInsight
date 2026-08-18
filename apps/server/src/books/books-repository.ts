@@ -1,5 +1,5 @@
 import { BookGenre, BookWithData } from '@koinsight/common/types';
-import { Book } from '@koinsight/common/types/book';
+import { Book, ReadingStatus } from '@koinsight/common/types/book';
 import { BookDevice } from '@koinsight/common/types/book-device';
 import { Genre } from '@koinsight/common/types/genre';
 import { sum } from 'ramda';
@@ -96,6 +96,10 @@ export class BooksRepository {
         const totalReadTime = BooksService.getTotalReadTime(bookDevices);
         const totalReadPages = BooksService.getTotalReadPages(book, stats);
         const uniqueReadPages = BooksService.getUniqueReadPages(book, stats);
+        const currentPage = BooksService.getCurrentPage(book, stats);
+        const maxReadPage = BooksService.getMaxReadPage(book, stats);
+        const readPercentage = BooksService.getReadPercentage(totalPages, currentPage);
+        const status = BooksService.getStatus(book, totalPages, maxReadPage);
         const started_reading = BooksService.getStartedReading(stats);
         const read_per_day = BooksService.getReadPerDay(stats);
 
@@ -108,6 +112,10 @@ export class BooksRepository {
           total_pages: totalPages,
           total_read_pages: totalReadPages,
           unique_read_pages: uniqueReadPages,
+          current_page: currentPage,
+          max_read_page: maxReadPage,
+          read_percentage: readPercentage,
+          status,
           total_read_time: totalReadTime,
           last_open: lastOpen,
           highlights: sum(bookDevices.map((device) => device.highlights)),
@@ -133,5 +141,9 @@ export class BooksRepository {
 
   static async setReferencePages(id: number, referencePages: number | null) {
     return db<Book>('book').where({ id }).update({ reference_pages: referencePages });
+  }
+
+  static async setStatusOverride(id: number, status: ReadingStatus | null) {
+    return db<Book>('book').where({ id }).update({ status_override: status });
   }
 }

@@ -31,7 +31,7 @@ import { useParams } from 'react-router';
 import { useAuth } from '../../auth/auth-context';
 import { useBookWithData } from '../../api/use-book-with-data';
 import { useIsMobile } from '../../hooks/use-is-mobile';
-import { getLatestReadPage } from '../../utils/book-progress';
+import { BookStatusBadge } from '../../components/book-status-badge/book-status-badge';
 import { formatSecondsToHumanReadable } from '../../utils/dates';
 import { BookCard } from './book-card';
 import { BookPageAnnotations } from './book-page-annotations';
@@ -180,13 +180,9 @@ export function BookPage(): JSX.Element {
 
 function StatsCard({ book }: { book: BookWithData }): JSX.Element {
   const isMobile = useIsMobile();
-  const bookPages =
-    book?.reference_pages ||
-    book?.device_data.reduce((acc, device) => Math.max(acc, device.pages), 0) ||
-    0;
-
-  const progressPages = getLatestReadPage(book);
-  const progressPercent = bookPages > 0 ? Math.round((progressPages / bookPages) * 100) : 0;
+  const bookPages = book.total_pages;
+  const progressPages = book.current_page;
+  const progressPercent = book.read_percentage;
 
   const readingDays = book ? Object.keys(book.read_per_day).length : 0;
   const avgPerDay = readingDays > 0 ? (book?.total_read_time ?? 0) / readingDays : 0;
@@ -204,9 +200,12 @@ function StatsCard({ book }: { book: BookWithData }): JSX.Element {
       }}
     >
       <Stack gap={0} align="center">
-        <Text size="sm" c="dimmed" tt="uppercase" fw={700}>
-          Reading progress
-        </Text>
+        <Group gap="xs" align="center" mb="xs">
+          <Text size="sm" c="dimmed" tt="uppercase" fw={700}>
+            Reading progress
+          </Text>
+          <BookStatusBadge status={book.status} />
+        </Group>
         <Flex
           direction={{ base: 'column', sm: 'row' }}
           align="center"
@@ -231,7 +230,7 @@ function StatsCard({ book }: { book: BookWithData }): JSX.Element {
               }
               sections={[
                 {
-                  value: (progressPages / bookPages) * 100,
+                  value: book.read_percentage,
                   color: 'koinsight',
                 },
               ]}

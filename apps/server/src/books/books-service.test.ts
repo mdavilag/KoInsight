@@ -1,7 +1,7 @@
-import { Book, BookDevice, Device } from '@koinsight/common/types';
+import { Book, BookDevice, Device, PageStat } from '@koinsight/common/types';
 import { addDays, startOfDay } from 'date-fns';
 import { createBookDevice } from '../db/factories/book-device-factory';
-import { createBook } from '../db/factories/book-factory';
+import { createBook, fakeBook } from '../db/factories/book-factory';
 import { createDevice } from '../db/factories/device-factory';
 import { createPageStat } from '../db/factories/page-stat-factory';
 import { db } from '../knex';
@@ -324,5 +324,124 @@ describe(BooksService.getUniqueReadPages, () => {
     const result = await BooksService.getUniqueReadPages(book1, stats);
 
     expect(result).toEqual(6); // result is rounded
+  });
+});
+
+/**
+ * The helpers below are pure, so they are exercised with plain objects instead of
+ * round-tripping through the database.
+ */
+function aBook(overrides: Partial<Book> = {}): Book {
+  return { ...fakeBook({ reference_pages: null, ...overrides }), id: 1 } as Book;
+}
+
+function aStat(overrides: Partial<PageStat>): PageStat {
+  return {
+    device_id: 'device-1',
+    book_md5: 'md5',
+    page: 1,
+    start_time: 0,
+    duration: 30,
+    total_pages: 100,
+    ...overrides,
+  };
+}
+
+describe(BooksService.getCurrentPage, () => {
+  it('returns 0 when there are no stats', () => {
+    expect(BooksService.getCurrentPage(aBook(), [])).toEqual(0);
+  });
+
+  it('returns the page of the most recent stat, not the highest page', () => {
+    const stats = [
+      aStat({ page: 10, start_time: 100 }),
+      // a glossary lookup at the end of the book
+      aStat({ page: 98, start_time: 200 }),
+      aStat({ page: 12, start_time: 300 }),
+    ];
+
+    expect(BooksService.getCurrentPage(aBook(), stats)).toEqual(12);
+  });
+
+  it('breaks ties on start_time with the higher page', () => {
+    const stats = [aStat({ page: 40, start_time: 500 }), aStat({ page: 41, start_time: 500 })];
+
+    expect(BooksService.getCurrentPage(aBook(), stats)).toEqual(41);
+  });
+
+  it('rescales the page to the reference page count', () => {
+    const book = aBook({ reference_pages: 200 });
+    const stats = [aStat({ page: 25, start_time: 100, total_pages: 100 })];
+
+    expect(BooksService.getCurrentPage(book, stats)).toEqual(50);
+  });
+
+  it('leaves the page untouched when a stat reports no total pages', () => {
+    const book = aBook({ reference_pages: 200 });
+    const stats = [aStat({ page: 25, start_time: 100, total_pages: 0 })];
+
+    expect(BooksService.getCurrentPage(book, stats)).toEqual(25);
+  });
+});
+
+describe(BooksService.getMaxReadPage, () => {
+  it('returns 0 when there are no stats', () => {
+    expect(BooksService.getMaxReadPage(aBook(), [])).toEqual(0);
+  });
+
+  it('returns the highest page ever reached, regardless of when', () => {
+    const stats = [
+      aStat({ page: 10, start_time: 100 }),
+      aStat({ page: 98, start_time: 200 }),
+      aStat({ page: 12, start_time: 300 }),
+    ];
+
+    expect(BooksService.getMaxReadPage(aBook(), stats)).toEqual(98);
+  });
+
+  it('rescales pages to the reference page count', () => {
+    const book = aBook({ reference_pages: 50 });
+    const stats = [aStat({ page: 100, start_time: 100, total_pages: 100 })];
+
+    expect(BooksService.getMaxReadPage(book, stats)).toEqual(50);
+  });
+});
+
+describe(BooksService.getReadPercentage, () => {
+  it('returns 0 when the total page count is unknown', () => {
+    expect(BooksService.getReadPercentage(0, 42)).toEqual(0);
+  });
+
+  it('rounds to a whole percentage', () => {
+    expect(BooksService.getReadPercentage(272, 250)).toEqual(92);
+  });
+
+  it('clamps to 100', () => {
+    expect(BooksService.getReadPercentage(100, 105)).toEqual(100);
+  });
+});
+
+describe(BooksService.getStatus, () => {
+  it('is reading while the last page has not been reached', () => {
+    expect(BooksService.getStatus(aBook(), 272, 250)).toEqual('reading');
+  });
+
+  it('is read once the last page has been reached', () => {
+    expect(BooksService.getStatus(aBook(), 272, 272)).toEqual('read');
+  });
+
+  it('allows one page of slack for page count mismatches', () => {
+    expect(BooksService.getStatus(aBook(), 272, 271)).toEqual('read');
+  });
+
+  it('is reading when the total page count is unknown', () => {
+    expect(BooksService.getStatus(aBook(), 0, 0)).toEqual('reading');
+  });
+
+  it('lets a manual override win over the derived status', () => {
+    expect(BooksService.getStatus(aBook({ status_override: 'read' }), 272, 10)).toEqual('read');
+    expect(BooksService.getStatus(aBook({ status_override: 'reading' }), 272, 272)).toEqual(
+      'reading'
+    );
   });
 });

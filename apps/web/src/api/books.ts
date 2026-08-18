@@ -1,4 +1,4 @@
-import { Book, BookWithData } from '@koinsight/common/types';
+import { Book, BookWithData, ReadingStatus } from '@koinsight/common/types';
 import useSWR from 'swr';
 import { API_URL, fetchFromAPI } from './api';
 
@@ -28,6 +28,10 @@ export async function updateBookReferencePages(id: Book['id'], referencePages: n
   return fetchFromAPI<Book>(`books/${id}/reference_pages`, 'PUT', {
     reference_pages: referencePages,
   });
+}
+
+export async function updateBookStatus(id: Book['id'], status: ReadingStatus | null) {
+  return fetchFromAPI<{ message: string }>(`books/${id}/status`, 'PUT', { status });
 }
 
 export function uploadBookCover(bookId: Book['id'], formData: FormData) {

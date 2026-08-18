@@ -1,3 +1,4 @@
+import { ReadingStatus } from '@koinsight/common/types/book';
 import { NextFunction, Request, Response, Router } from 'express';
 import { requireAuth } from '../auth/auth-middleware';
 import { BooksRepository } from './books-repository';
@@ -6,6 +7,8 @@ import { coversRouter } from './covers/covers-router';
 import { getBookById } from './get-book-by-id-middleware';
 
 const router = Router();
+
+const READING_STATUSES: ReadingStatus[] = ['reading', 'read'];
 
 router.use('/:bookId/cover', coversRouter);
 
@@ -107,5 +110,27 @@ router.put(
     }
   }
 );
+
+/**
+ * Overrides a book's reading status. `null` clears the override and falls back
+ * to the status derived from the reading statistics.
+ */
+router.put('/:bookId/status', requireAuth, getBookById, async (req: Request, res: Response) => {
+  const book = req.book!;
+  const { status } = req.body;
+
+  if (status !== null && !READING_STATUSES.includes(status)) {
+    res.status(400).json({ error: 'Invalid status' });
+    return;
+  }
+
+  try {
+    await BooksRepository.setStatusOverride(book.id, status);
+    res.status(200).json({ message: 'Book status updated' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to update book status' });
+  }
+});
 
 export { router as booksRouter };
