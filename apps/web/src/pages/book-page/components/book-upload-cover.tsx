@@ -3,6 +3,7 @@ import { Button, FileInput, Flex, Title } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { FormEvent, useState } from 'react';
 import { mutate } from 'swr';
+import { getErrorMessage } from '../../../api/api';
 import { uploadBookCover } from '../../../api/books';
 
 export type BookUploadCoverProps = {
@@ -45,7 +46,7 @@ export function BookUploadCover({ book, showTitle = true, onChange }: BookUpload
       if (response.ok) {
         await onSuccess();
       } else {
-        setMessage('Failed to upload file.');
+        setMessage(await getErrorMessage(response));
       }
     } catch (error) {
       setMessage(`Error: ${error}`);

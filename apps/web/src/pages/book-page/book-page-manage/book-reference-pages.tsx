@@ -26,7 +26,7 @@ export function BookReferencePages({ book }: BookReferencePagesProps) {
     } catch (error) {
       notifications.show({
         title: 'Failed to update reference page count',
-        message: '',
+        message: error instanceof Error ? error.message : '',
         color: 'red',
         position: 'top-center',
       });

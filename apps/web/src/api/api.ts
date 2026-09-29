@@ -7,6 +7,19 @@ export function setUnauthorizedHandler(handler: (() => void) | null): void {
   unauthorizedHandler = handler;
 }
 
+// Reads the server's `{ error }` / `{ message }` body when present, so
+// callers can show the real failure reason instead of a generic message.
+export async function getErrorMessage(response: Response): Promise<string> {
+  try {
+    const body = await response.clone().json();
+    if (typeof body?.error === 'string') return body.error;
+    if (typeof body?.message === 'string') return body.message;
+  } catch {
+    // Response wasn't JSON (e.g. an HTML error/challenge page) - fall through.
+  }
+  return `Request failed (${response.status} ${response.statusText})`;
+}
+
 export async function fetchFromAPI<T>(
   endpoint: string,
   method: string = 'GET',
@@ -35,7 +48,7 @@ export async function fetchFromAPI<T>(
   }
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch data, ${method} ${endpoint}`);
+    throw new Error(await getErrorMessage(response));
   }
   return response.json() as Promise<T>;
 }
