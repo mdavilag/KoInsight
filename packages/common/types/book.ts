@@ -34,4 +34,9 @@ export type Book = DbBook & {
   reference_pages: number | null;
   /** Manually set status. `null` means the status is derived from the statistics. */
   status_override: ReadingStatus | null;
+  /**
+   * When the automatic Open Library cover lookup last ran, in epoch milliseconds.
+   * `null` means it has never run; any value means it has, found or not.
+   */
+  cover_fetch_attempted_at: number | null;
 };

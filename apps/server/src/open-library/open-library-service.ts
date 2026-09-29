@@ -22,20 +22,45 @@ export class OpenLibraryService {
     return uniq([...coverIds, ...newCoverIds].filter(Boolean));
   }
 
+  /**
+   * `lang` is deliberately not defaulted. Open Library biases results towards the language
+   * it is given, so hardcoding one made every non-English library search for the wrong
+   * edition — a Portuguese title would come back with its English cover. Omitting the
+   * parameter lets Open Library rank on the query alone, which is what we want for a
+   * library that can hold any mix of languages.
+   */
   private static async searchBooks(
     searchTerm: string,
     limit = 3,
     fields = 'key,cover_i',
-    lang = 'eng'
+    lang?: string
   ): Promise<OpenLibrarySearchResult> {
     const params = new URLSearchParams({
       q: searchTerm,
       limit: limit.toString(),
-      lang,
       fields,
     });
 
+    if (lang) {
+      params.set('lang', lang);
+    }
+
     return fetch(`${OPEN_LIBRARY_API}/search.json?${params}`).then((response) => response.json());
+  }
+
+  /**
+   * Single best-guess cover for a book, in one request.
+   *
+   * `queryCovers` fans out to `editions.json` for every hit to build the widest possible
+   * grid for a human to choose from. The automatic backfill runs unattended over the whole
+   * library, so it takes the top-ranked hit that actually has a cover and makes no further
+   * calls. Returns null when Open Library has nothing.
+   */
+  static async findFirstCoverId(searchTerm: string): Promise<number | null> {
+    const response = await this.searchBooks(searchTerm, 5);
+    const withCover = response.docs?.find((doc) => doc.cover_i);
+
+    return withCover?.cover_i ?? null;
   }
 
   private static queryCoverForKey(key: string) {

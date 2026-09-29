@@ -146,4 +146,21 @@ export class BooksRepository {
   static async setStatusOverride(id: number, status: ReadingStatus | null) {
     return db<Book>('book').where({ id }).update({ status_override: status });
   }
+
+  /**
+   * Books from the given md5 set that the automatic cover lookup has never run for.
+   * Cover *presence* is a filesystem fact, so the caller still has to check that.
+   */
+  static async getCoverBackfillCandidates(md5s: Book['md5'][]): Promise<Book[]> {
+    if (md5s.length === 0) return [];
+
+    return db<Book>('book')
+      .whereIn('md5', md5s)
+      .whereNull('cover_fetch_attempted_at')
+      .where({ soft_deleted: false });
+  }
+
+  static async markCoverFetchAttempted(id: number, at: number = Date.now()): Promise<number> {
+    return db<Book>('book').where({ id }).update({ cover_fetch_attempted_at: at });
+  }
 }

@@ -14,6 +14,7 @@ export function fakeBook(overrides: Partial<FakeBook> = {}): FakeBook {
     language: faker.location.language().alpha2,
     soft_deleted: false,
     status_override: null,
+    cover_fetch_attempted_at: null,
     ...overrides,
   };
 

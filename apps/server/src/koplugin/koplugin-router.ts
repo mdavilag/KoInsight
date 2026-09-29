@@ -6,6 +6,7 @@ import archiver from 'archiver';
 import { NextFunction, Request, Response, Router } from 'express';
 import path from 'path';
 import { requireAuth } from '../auth/auth-middleware';
+import { CoverBackfillService } from '../books/covers/cover-backfill-service';
 import { DeviceRepository } from '../devices/device-repository';
 import { UploadService } from '../upload/upload-service';
 
@@ -67,6 +68,10 @@ router.post('/import', rejectOldPluginVersion, async (req, res) => {
 
     await UploadService.uploadStatisticData(koreaderBooks, newPageStats, annotations, deviceId);
     res.status(200).json({ message: 'Upload successful' });
+
+    // Deliberately after the response and not awaited: the plugin is waiting on this socket
+    // and Open Library is far slower than the import itself.
+    void CoverBackfillService.backfillMissing(koreaderBooks ?? []);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error importing data' });
