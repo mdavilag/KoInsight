@@ -40,7 +40,7 @@ const upload = multer({
       cb(new Error(`Only ${allowedExtensions.join(', ')} files are allowed`));
     }
   },
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: appConfig.upload.maxFileSizeMegaBytes * 1024 * 1024 },
 });
 
 /**
@@ -83,5 +83,14 @@ router.post(
     }
   }
 );
+
+router.use((err: any, _req: Request, res: Response, next: NextFunction) => {
+  if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
+    const maxMb = Math.round(appConfig.upload.maxFileSizeMegaBytes);
+    res.status(413).json({ error: `File too large. Maximum file size allowed is ${maxMb} MB.` });
+    return;
+  }
+  next(err);
+});
 
 export { router as coversRouter };

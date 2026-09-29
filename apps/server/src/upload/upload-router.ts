@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { unlinkSync } from 'fs';
 import multer from 'multer';
+import { CoverBackfillService } from '../books/covers/cover-backfill-service';
 import { appConfig } from '../config';
 import { UploadService } from './upload-service';
 
@@ -50,6 +51,9 @@ router.post('/', upload.single('file'), async (req, res, next) => {
     await UploadService.uploadStatisticData(newBooks, newPageStats);
 
     res.status(200).json({ message: 'Database imported successfully' });
+
+    // See the note in koplugin-router: covers are looked up off the request path.
+    void CoverBackfillService.backfillMissing(newBooks);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to import database' });

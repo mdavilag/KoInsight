@@ -43,7 +43,7 @@ function send_device_data(server_url, silent)
   }
   body = JSON.encode(body)
 
-  local ok, response = callApi("POST", url, get_headers(body), body)
+  local ok, response = callApi("POST", url, get_headers(body), body, nil, silent)
 
   if ok ~= true and not silent then
     render_response_message(response, "Error:", "Unable to register device.")
@@ -74,7 +74,7 @@ function send_statistics_data(server_url, silent)
 
   body = JSON.encode(body)
 
-  local ok, response = callApi("POST", url, get_headers(body), body)
+  local ok, response = callApi("POST", url, get_headers(body), body, nil, silent)
 
   if not silent then
     if ok then
@@ -83,6 +83,8 @@ function send_statistics_data(server_url, silent)
       render_response_message(response, "Error:", "Data upload failed.")
     end
   end
+
+  return ok, response
 end
 
 -- Send annotations for a specific book
@@ -257,7 +259,12 @@ function KoInsightUpload.syncAllBooks(server_url, progress_callback)
 
   -- First, sync all statistics data from the database
   -- This includes all reading progress (page_stat_data) and book metadata
-  send_statistics_data(server_url, true) -- silent
+  -- Silent only to skip the success popup mid-sync; a manual sync must still say when the
+  -- statistics did not make it, since the annotation pass below reports only on annotations.
+  local stats_ok, stats_response = send_statistics_data(server_url, true)
+  if not stats_ok then
+    render_response_message(stats_response, "Error:", "Statistics upload failed.")
+  end
 
   -- Then, sync all annotations for all books
   bulk_sync_all_books(server_url, progress_callback)
