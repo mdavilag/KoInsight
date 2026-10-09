@@ -3,7 +3,9 @@ import request from 'supertest';
 import { createDevice } from '../db/factories/device-factory';
 import { fakeKoReaderAnnotation } from '../db/factories/koreader-annotation-factory';
 import { db } from '../knex';
-import { kopluginRouter, REQUIRED_PLUGIN_VERSION } from './koplugin-router';
+import { kopluginRouter } from './koplugin-router';
+
+const PLUGIN_VERSION = '0.3.0';
 
 describe('koplugin-router', () => {
   const app = express();
@@ -14,7 +16,7 @@ describe('koplugin-router', () => {
     it('registers a device', async () => {
       const response = await request(app)
         .post('/koplugin/device')
-        .send({ id: 'device-123', model: 'Kindle Paperwhite', version: REQUIRED_PLUGIN_VERSION });
+        .send({ id: 'device-123', model: 'Kindle Paperwhite', version: PLUGIN_VERSION });
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ message: 'Device registered successfully' });
@@ -31,7 +33,7 @@ describe('koplugin-router', () => {
     it('returns 400 when device ID is missing', async () => {
       const response = await request(app)
         .post('/koplugin/device')
-        .send({ model: 'Kindle', version: REQUIRED_PLUGIN_VERSION });
+        .send({ model: 'Kindle', version: PLUGIN_VERSION });
 
       expect(response.status).toBe(400);
       expect(response.body).toEqual({ error: 'Missing device ID or model' });
@@ -40,28 +42,26 @@ describe('koplugin-router', () => {
     it('returns 400 when model is missing', async () => {
       const response = await request(app)
         .post('/koplugin/device')
-        .send({ id: 'device-123', version: REQUIRED_PLUGIN_VERSION });
+        .send({ id: 'device-123', version: PLUGIN_VERSION });
 
       expect(response.status).toBe(400);
       expect(response.body).toEqual({ error: 'Missing device ID or model' });
     });
 
-    it('returns 400 when plugin version is incorrect', async () => {
+    it('accepts an older plugin version', async () => {
       const response = await request(app)
         .post('/koplugin/device')
         .send({ id: 'device-123', model: 'Kindle', version: '0.1.0' });
 
-      expect(response.status).toBe(400);
-      expect(response.body.error).toContain('Unsupported plugin version');
+      expect(response.status).toBe(200);
     });
 
-    it('returns 400 when plugin version is missing', async () => {
+    it('accepts a request with no plugin version', async () => {
       const response = await request(app)
         .post('/koplugin/device')
         .send({ id: 'device-123', model: 'Kindle' });
 
-      expect(response.status).toBe(400);
-      expect(response.body.error).toContain('Unsupported plugin version');
+      expect(response.status).toBe(200);
     });
   });
 
@@ -73,7 +73,7 @@ describe('koplugin-router', () => {
       const response = await request(app)
         .post('/koplugin/import')
         .send({
-          version: REQUIRED_PLUGIN_VERSION,
+          version: PLUGIN_VERSION,
           books: [
             {
               md5: bookMd5,
@@ -128,7 +128,7 @@ describe('koplugin-router', () => {
       const response = await request(app)
         .post('/koplugin/import')
         .send({
-          version: REQUIRED_PLUGIN_VERSION,
+          version: PLUGIN_VERSION,
           books: [
             {
               md5: bookMd5,
@@ -202,7 +202,7 @@ describe('koplugin-router', () => {
       );
     });
 
-    it('returns 400 when plugin version is incorrect', async () => {
+    it('accepts an older plugin version', async () => {
       const response = await request(app)
         .post('/koplugin/import')
         .send({
@@ -211,8 +211,7 @@ describe('koplugin-router', () => {
           stats: [],
         });
 
-      expect(response.status).toBe(400);
-      expect(response.body.error).toContain('Unsupported plugin version');
+      expect(response.status).toBe(200);
     });
   });
 
@@ -220,17 +219,16 @@ describe('koplugin-router', () => {
     it('returns health status', async () => {
       const response = await request(app)
         .get('/koplugin/health')
-        .send({ version: REQUIRED_PLUGIN_VERSION });
+        .send({ version: PLUGIN_VERSION });
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({ message: 'Plugin is healthy' });
     });
 
-    it('returns 400 when plugin version is incorrect', async () => {
+    it('accepts an older plugin version', async () => {
       const response = await request(app).get('/koplugin/health').send({ version: '0.1.0' });
 
-      expect(response.status).toBe(400);
-      expect(response.body.error).toContain('Unsupported plugin version');
+      expect(response.status).toBe(200);
     });
   });
 

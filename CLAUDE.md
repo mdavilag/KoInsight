@@ -108,7 +108,7 @@ Mounted in `app.ts`. Auth model is deliberately mixed:
 | Mount                               | Auth                                          | Purpose                                                                                                  |
 | ----------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | `/` (`kosyncRouter`)                | KOSync credentials                            | Must be at root to match the KOSync API. `PUT/GET /syncs/progress`, `/users/create`, `/users/auth`.      |
-| `/api/plugin`                       | none, but exact plugin version                | `POST /device`, `POST /import`, `GET /health`, `GET /download` (this one _does_ require dashboard auth). |
+| `/api/plugin`                       | none                                          | `POST /device`, `POST /import`, `GET /health`, `GET /download` (this one _does_ require dashboard auth). |
 | `/api/auth`                         | —                                             | `POST /login`, `POST /logout`, `GET /me`.                                                                |
 | `/api/books`                        | public read, `requireAuth` per mutation route | List, detail, cover, delete, hide, genres, `reference_pages`, `status`.                                  |
 | `/api/stats`                        | public read                                   | `GET /` (aggregate), `GET /:book_md5`.                                                                   |
@@ -119,12 +119,15 @@ Mounted in `app.ts`. Auth model is deliberately mixed:
 Device-facing endpoints are intentionally unauthenticated: the KOReader plugin and KOSync
 cannot send dashboard credentials.
 
-### Plugin version gate
+### No plugin version gate
 
-`koplugin-router.ts` rejects any request whose `version` is not **exactly**
-`REQUIRED_PLUGIN_VERSION`. Bumping the plugin means bumping this constant, and every device
-still on the old version stops syncing until its plugin is updated. Treat it as a coordinated
-deploy.
+`koplugin-router.ts` used to reject any request whose `version` was not exactly one constant,
+so every server release stopped all devices syncing until each plugin was updated by hand. It
+was removed: the plugin still sends `version`, the server ignores it. A change to the import
+payload must therefore stay readable by older plugins.
+
+The server/web version (`package.json`, shown in the footer) and the plugin version
+(`const.VERSION` in the plugin) are independent.
 
 ---
 

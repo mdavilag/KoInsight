@@ -3,32 +3,21 @@ import { KoReaderBook } from '@koinsight/common/types/book';
 import { Device } from '@koinsight/common/types/device';
 import { PageStat } from '@koinsight/common/types/page-stat';
 import archiver from 'archiver';
-import { NextFunction, Request, Response, Router } from 'express';
+import { Router } from 'express';
 import path from 'path';
 import { requireAuth } from '../auth/auth-middleware';
 import { CoverBackfillService } from '../books/covers/cover-backfill-service';
 import { DeviceRepository } from '../devices/device-repository';
 import { UploadService } from '../upload/upload-service';
 
-// Router for KoInsight koreader plugin
+// Router for KoInsight koreader plugin.
+//
+// There is deliberately no plugin version gate. It used to reject anything but one exact
+// version, which meant every server release stopped all devices syncing until each plugin
+// was updated by hand on the e-reader. The plugin still sends `version`; it is just ignored.
 const router = Router();
 
-export const REQUIRED_PLUGIN_VERSION = '0.3.0';
-
-const rejectOldPluginVersion = (req: Request, res: Response, next: NextFunction) => {
-  const { version } = req.body;
-
-  if (!version || version !== REQUIRED_PLUGIN_VERSION) {
-    res.status(400).json({
-      error: `Unsupported plugin version. Version must be ${REQUIRED_PLUGIN_VERSION}. Please update your KOReader koinsight.koplugin`,
-    });
-    return;
-  }
-
-  next();
-};
-
-router.post('/device', rejectOldPluginVersion, async (req, res) => {
+router.post('/device', async (req, res) => {
   const { id, model } = req.body;
 
   if (!id || !model) {
@@ -48,7 +37,7 @@ router.post('/device', rejectOldPluginVersion, async (req, res) => {
   }
 });
 
-router.post('/import', rejectOldPluginVersion, async (req, res) => {
+router.post('/import', async (req, res) => {
   const contentLength = req.headers['content-length'];
   console.warn(`[${req.method}] ${req.url} — Content-Length: ${contentLength || 'unknown'} bytes`);
 
@@ -79,7 +68,7 @@ router.post('/import', rejectOldPluginVersion, async (req, res) => {
 });
 
 // TODO: implement check in koreader plugin
-router.get('/health', rejectOldPluginVersion, async (_, res) => {
+router.get('/health', async (_, res) => {
   res.status(200).json({ message: 'Plugin is healthy' });
 });
 

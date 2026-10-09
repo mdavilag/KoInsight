@@ -58,7 +58,8 @@ const theme = createTheme({
 
 function AppLayout(): JSX.Element {
   const [drawerOpened, { open: openDrawer, close: closeDrawer }] = useDisclosure(false);
-  const version = __APP_VERSION__;
+  // package.json must hold full semver (0.3.0); the footer shows the short form (0.3).
+  const version = String(__APP_VERSION__).replace(/^v/, '').replace(/\.0$/, '');
   return (
     <>
       <div className={style.App}>
