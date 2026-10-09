@@ -35,6 +35,9 @@ export function BooksCards({ books }: BooksCardsProps): JSX.Element {
       {books.map((book) => (
         <Box
           key={book.id}
+          // Pinned to the cover width: the grid column is `1fr`, so an unsized card stretched
+          // and the progress bar ran wider than the cover on phones.
+          w={cardWidth}
           className={style.Card}
           role="button"
           onClick={() => navigate(getBookPath(book.id))}

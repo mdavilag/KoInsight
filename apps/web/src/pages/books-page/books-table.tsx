@@ -6,8 +6,11 @@ import { NavLink } from 'react-router';
 import { API_URL } from '../../api/api';
 import { useIsMobile } from '../../hooks/use-is-mobile';
 import { getBookPath } from '../../routes';
-import { BookStatusBadge } from '../../components/book-status-badge/book-status-badge';
-import { formatRelativeDate, getDuration, shortDuration } from '../../utils/dates';
+import {
+  BookStatusBadge,
+  BookStatusIcon,
+} from '../../components/book-status-badge/book-status-badge';
+import { formatRelativeDate, shortDuration } from '../../utils/dates';
 import style from './books-table.module.css';
 
 type BooksTableProps = {
@@ -65,14 +68,18 @@ export function BooksTable({ books }: BooksTableProps): JSX.Element {
                     {book.authors ?? 'Unknown author'}
                     {book.series !== 'N/A' ? ` · ${book.series}` : ''}
                   </span>
-                  {book.annotations.length > 0 && (
-                    <Tooltip label={`${book.annotations.length} imported annotations`} withArrow>
-                      <Flex align="center">
-                        <IconHighlight size={13} />
-                        &nbsp;{book.annotations.length}
-                      </Flex>
-                    </Tooltip>
-                  )}
+                  <Flex align="center" gap="xs">
+                    {/* The Status column is desktop-only; keep the status visible on phones. */}
+                    <BookStatusIcon status={book.status} hiddenFrom="md" />
+                    {book.annotations.length > 0 && (
+                      <Tooltip label={`${book.annotations.length} imported annotations`} withArrow>
+                        <Flex align="center">
+                          <IconHighlight size={13} />
+                          &nbsp;{book.annotations.length}
+                        </Flex>
+                      </Tooltip>
+                    )}
+                  </Flex>
                 </Stack>
               </Flex>
             </Table.Td>
@@ -89,7 +96,7 @@ export function BooksTable({ books }: BooksTableProps): JSX.Element {
               <BookStatusBadge status={book.status} />
             </Table.Td>
             <Table.Td visibleFrom="md">
-              {book.total_read_time ? shortDuration(getDuration(book.total_read_time)) : 'N/A'}
+              {book.total_read_time ? shortDuration(book.total_read_time) : 'N/A'}
             </Table.Td>
             <Table.Td visibleFrom="md">{formatRelativeDate(book.last_open * 1000)}</Table.Td>
           </Table.Tr>

@@ -1,15 +1,16 @@
-import { Duration } from 'date-fns';
 import { formatDistanceToNow } from 'date-fns/formatDistanceToNow';
 import { formatDuration } from 'date-fns/formatDuration';
 import { intervalToDuration } from 'date-fns/intervalToDuration';
 
-export function getDuration(seconds: number): Duration {
-  return intervalToDuration({ start: 0, end: seconds * 1000 });
-}
-
-export function shortDuration(duration: Duration): string {
-  const hours = String(duration.hours ?? 0).padStart(2, '0');
-  const minutes = String(duration.minutes ?? 0).padStart(2, '0');
+/**
+ * `HH:MM` with unbounded hours. Computed from raw seconds rather than via
+ * `intervalToDuration`, which rolls 24h into `days` (and days into months/years), so a
+ * 25h35m book used to render as `01:35`.
+ */
+export function shortDuration(seconds: number): string {
+  const totalMinutes = Math.floor(seconds / 60);
+  const hours = String(Math.floor(totalMinutes / 60)).padStart(2, '0');
+  const minutes = String(totalMinutes % 60).padStart(2, '0');
 
   return `${hours}:${minutes}`;
 }
