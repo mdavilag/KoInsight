@@ -4,10 +4,48 @@ import { OpenLibrarySearchResult } from './open-library-types';
 const OPEN_LIBRARY_API = 'https://openlibrary.org';
 const OPEN_LIBRARY_COVERS_API = 'https://covers.openlibrary.org';
 
+/**
+ * Well under undici's 10s connect timeout. openlibrary.org has outages where TCP connects
+ * just hang (while covers.openlibrary.org stays up), and the cover search fans out to
+ * several requests, so waiting the full default left the UI on a spinner before a bare 500.
+ */
+const REQUEST_TIMEOUT_MS = 6000;
+
+/** Open Library could not be reached or answered with a server error — not our fault. */
+export class OpenLibraryUnavailableError extends Error {
+  constructor(
+    url: string,
+    readonly cause: unknown
+  ) {
+    super(`Open Library is unreachable (${new URL(url).host})`);
+    this.name = 'OpenLibraryUnavailableError';
+  }
+}
+
+async function request(url: string): Promise<Response> {
+  let response: Response;
+
+  try {
+    response = await fetch(url, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
+  } catch (error) {
+    throw new OpenLibraryUnavailableError(url, error);
+  }
+
+  if (response.status >= 500) {
+    throw new OpenLibraryUnavailableError(url, new Error(`HTTP ${response.status}`));
+  }
+
+  if (!response.ok) {
+    throw new Error(`Open Library request failed: HTTP ${response.status} for ${url}`);
+  }
+
+  return response;
+}
+
 export class OpenLibraryService {
   static async fetchCover(coverId: string, size: 'S' | 'M' | 'L' = 'M') {
     const url = `${OPEN_LIBRARY_COVERS_API}/b/id/${coverId}-${size}.jpg`;
-    return fetch(url).then((response) => response.arrayBuffer());
+    return request(url).then((response) => response.arrayBuffer());
   }
 
   static async queryCovers(searchTerm: string, limit: number = 3) {
@@ -45,7 +83,7 @@ export class OpenLibraryService {
       params.set('lang', lang);
     }
 
-    return fetch(`${OPEN_LIBRARY_API}/search.json?${params}`).then((response) => response.json());
+    return request(`${OPEN_LIBRARY_API}/search.json?${params}`).then((response) => response.json());
   }
 
   /**
@@ -64,7 +102,7 @@ export class OpenLibraryService {
   }
 
   private static queryCoverForKey(key: string) {
-    return fetch(`${OPEN_LIBRARY_API}${key}/editions.json`)
+    return request(`${OPEN_LIBRARY_API}${key}/editions.json`)
       .then((r) => r.json())
       .then((r) => r.entries.flatMap((entry: { covers: string[] }) => entry.covers));
   }

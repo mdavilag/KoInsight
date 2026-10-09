@@ -42,8 +42,18 @@ export function BookPageCoverSelector({
       loadedCovers: [],
       isSavingCovers: false,
     }));
-    const coverIds = await listCovers(state.query || book.title);
-    setState((prev) => ({ ...prev, isLoading: false, data: coverIds }));
+    try {
+      const coverIds = await listCovers(state.query || book.title);
+      setState((prev) => ({ ...prev, isLoading: false, data: coverIds }));
+    } catch (error) {
+      setState((prev) => ({ ...prev, isLoading: false }));
+      notifications.show({
+        title: 'Error searching covers',
+        message: error instanceof Error ? error.message : 'Unable to search covers.',
+        color: 'red',
+        position: 'top-center',
+      });
+    }
   };
 
   const onSave = async (coverId: string) => {
@@ -56,10 +66,11 @@ export function BookPageCoverSelector({
           position: 'top-center',
         })
       )
-      .catch(() =>
+      .catch((error) =>
         notifications.show({
           title: 'Error saving cover',
-          message: `Unable to save cover for ${book.title}.`,
+          message:
+            error instanceof Error ? error.message : `Unable to save cover for ${book.title}.`,
           color: 'red',
           position: 'top-center',
         })

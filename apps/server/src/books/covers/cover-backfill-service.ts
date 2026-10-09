@@ -1,7 +1,10 @@
 import { Book, KoReaderBook } from '@koinsight/common/types';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { appConfig } from '../../config';
-import { OpenLibraryService } from '../../open-library/open-library-service';
+import {
+  OpenLibraryService,
+  OpenLibraryUnavailableError,
+} from '../../open-library/open-library-service';
 import { BooksRepository } from '../books-repository';
 import { CoversService } from './covers-service';
 
@@ -60,7 +63,11 @@ export class CoverBackfillService {
         await this.fetchCoverFor(book);
       }
     } catch (error) {
-      console.error('[covers] Backfill run failed:', error);
+      if (error instanceof OpenLibraryUnavailableError) {
+        console.warn(`[covers] ${error.message}; backfill postponed to the next sync`);
+      } else {
+        console.error('[covers] Backfill run failed:', error);
+      }
     } finally {
       this.running = false;
     }
@@ -100,6 +107,13 @@ export class CoverBackfillService {
       this.saveCover(book.md5, cover);
       console.log(`[covers] Saved a cover for "${book.title}"`);
     } catch (error) {
+      if (error instanceof OpenLibraryUnavailableError) {
+        // An outage says nothing about this book. Leave it eligible for the next sync and
+        // stop the run, or every book in it would be marked and never looked up again.
+        await BooksRepository.clearCoverFetchAttempted(book.id);
+        throw error;
+      }
+
       console.error(`[covers] Lookup failed for "${book.title}":`, error);
     }
   }

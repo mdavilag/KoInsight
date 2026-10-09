@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createBook } from '../../db/factories/book-factory';
 import { db } from '../../knex';
-import { OpenLibraryService } from '../../open-library/open-library-service';
+import {
+  OpenLibraryService,
+  OpenLibraryUnavailableError,
+} from '../../open-library/open-library-service';
 import { BooksRepository } from '../books-repository';
 import { CoverBackfillService } from './cover-backfill-service';
 
@@ -71,6 +74,26 @@ describe('CoverBackfillService', () => {
 
     const updated = await BooksRepository.getById(book.id);
     expect(updated!.cover_fetch_attempted_at).toBeTypeOf('number');
+  });
+
+  it('leaves books eligible and stops the run when Open Library is unreachable', async () => {
+    const first = await createBook(db);
+    const second = await createBook(db);
+
+    const find = vi
+      .spyOn(OpenLibraryService, 'findFirstCoverId')
+      .mockRejectedValue(
+        new OpenLibraryUnavailableError('https://openlibrary.org/search.json', new Error('timeout'))
+      );
+
+    await CoverBackfillService.backfillMissing([
+      koReaderBook(first.md5),
+      koReaderBook(second.md5),
+    ]);
+
+    expect(find).toHaveBeenCalledOnce();
+    expect((await BooksRepository.getById(first.id))!.cover_fetch_attempted_at).toBeNull();
+    expect((await BooksRepository.getById(second.id))!.cover_fetch_attempted_at).toBeNull();
   });
 
   it('never overwrites a cover that is already on disk', async () => {

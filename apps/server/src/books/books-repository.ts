@@ -163,4 +163,8 @@ export class BooksRepository {
   static async markCoverFetchAttempted(id: number, at: number = Date.now()): Promise<number> {
     return db<Book>('book').where({ id }).update({ cover_fetch_attempted_at: at });
   }
+
+  static async clearCoverFetchAttempted(id: number): Promise<number> {
+    return db<Book>('book').where({ id }).update({ cover_fetch_attempted_at: null });
+  }
 }
