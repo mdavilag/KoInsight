@@ -58,8 +58,8 @@ const theme = createTheme({
 
 function AppLayout(): JSX.Element {
   const [drawerOpened, { open: openDrawer, close: closeDrawer }] = useDisclosure(false);
-  // package.json must hold full semver (0.3.0); the footer shows the short form (0.3).
-  const version = String(__APP_VERSION__).replace(/^v/, '').replace(/\.0$/, '');
+  // The workspace package.json versions carry a `v` prefix (v0.3.0); show bare semver.
+  const version = String(__APP_VERSION__).replace(/^v/, '');
   return (
     <>
       <div className={style.App}>
